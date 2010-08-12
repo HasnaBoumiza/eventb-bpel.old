@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+	<!-- menus and toolbar -->
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            label="%actionSet.label"
+            visible="true"
+            id="vutshila.labs.bpelgen.actionSet">
+         <menu
+               label="%menu.label"
+               id="bpelgenMenu">
+            <separator
+                  name="bpelgenGroup">
+            </separator>
+         </menu>
+         <action
+               class="vutshila.labs.bpelgen.actions.Translate"
+               icon="icons/translate.png"
+               id="vutshila.labs.bpelgen.actions.Translate"
+               label="%action.label"
+               menubarPath="bpelgenMenu/bpelgenGroup"
+               toolbarPath="bpelgenGroup"
+               tooltip="%action.tooltip" enablesFor="+">
+               <selection class="org.eventb.core.basis.MachineRoot" />
+               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
+               <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
+         </action>
+          <action
+                class="vutshila.labs.bpelgen.actions.Update"
+                enablesFor="+"
+                id="vutshila.labs.bpelgen.actions.Update"
+                label="%action.label.0"
+                menubarPath="bpelgenMenu/bpelgenGroup"
+                tooltip="%action.tooltip.0">
+                
+                <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
+         </action>
+      </actionSet>
+   </extension>
+   
+   <!-- popup menus -->
+     <extension
+         point="org.eclipse.ui.popupMenus">
+        <!-- Event-B perspective-->
+      <objectContribution
+            id="vutshila.labs.bpelgen.contribution"
+             objectClass="org.eventb.core.basis.MachineRoot">
+         <menu
+               id="vutshila.labs.bpelgen.menu"
+               label="%menu.label.0"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="vutshila.labs.bpelgen.popup.actions.Translate"
+               enablesFor="+"
+               id="vutshila.labs.bpelgen.translate"
+               label="%action.label.1"
+               menubarPath="vutshila.labs.bpelgen.menu/group1">
+               <selection class="org.eventb.core.basis.MachineRoot" />
+               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
+         </action>
+      </objectContribution>
+      
+      <!-- this for IFile in other perspectives-->
+      <objectContribution
+            id="vutshila.labs.bpelgen.contribution"
+             objectClass="org.eclipse.core.resources.IFile">
+         <menu
+               id="vutshila.labs.bpelgen.menu"
+               label="%menu.label.1"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="vutshila.labs.bpelgen.popup.actions.Update"
+               enablesFor="+"
+               id="vutshila.labs.bpelgen.update"
+               label="%action.label.2"
+               menubarPath="vutshila.labs.bpelgen.menu/group1">
+			   <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
+         </action>
+          <action
+               class="vutshila.labs.bpelgen.popup.actions.Translate"
+               enablesFor="+"
+               id="vutshila.labs.bpelgen.translate"
+               label="%action.label.3"
+               menubarPath="vutshila.labs.bpelgen.menu/group1">
+               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
+               <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
+         </action>
+         <action
+               class="vutshila.labs.bpelgen.popup.actions.CheckXML"
+               enablesFor="1"
+               id="vutshila.labs.bpelgen.checkXML"
+               label="%action.label.4"
+               menubarPath="vutshila.labs.bpelgen.menu/group1">
+               
+               <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
+               <selection class="org.eclipse.core.resources.IFile" name="*.wsdl" />
+         </action>
+      </objectContribution>
+   </extension>
+   
+   <!-- XML editor -->
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="vutshila.labs.bpelgen.editors.XMLEditor"
+            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
+            extensions="wsdl, bpel"
+            id="vutshila.labs.bpelgen.editors.XMLEditor"
+            name="%editor.name">
+      </editor>
+   </extension>
+
+</plugin>
