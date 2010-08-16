@@ -55,37 +55,5 @@ public class Translator {
 	    }
 	}
 
-	// Testing wdsl packages and dom4j
-//	System.out.println("before reading");
-//	Document doc = null;
-//	Element root = null;
-//
-//	doc = DocumentHelper.createDocument();
-//	root = doc.addElement("process").addAttribute("name", "testing");
-//	IFile proc = project.getFile("awesome.bpel");
-//	if (!proc.exists()) {
-//	    FileWriter procWriter;
-//	    XMLWriter writer;
-//	    
-//	    System.out.println("In awesome");
-//
-//	    try {
-//		procWriter = new FileWriter(proc.getFullPath().toString());
-//		OutputFormat format = OutputFormat.createPrettyPrint();
-//		writer = new XMLWriter(procWriter, format);
-//		writer.write(doc);
-//		writer.close();
-//		proc.refreshLocal(IResource.DEPTH_ZERO, null);
-//		System.out.println("awesome executed");
-//	    } catch (IOException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	    } catch (CoreException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	    }
-//	}
-//	
-//	System.out.println("Done!");
     }
 }

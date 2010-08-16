@@ -53,7 +53,7 @@ public class Translate implements IObjectActionDelegate {
 			.getProject();
 		IFile machineFile = project.getFile(machine.getElementName()
 			.concat(".bcm"));
-
+	
 		if (!machineFile.exists())
 		    System.out.println(machineFile.getName()
 			    + " File does not exits");

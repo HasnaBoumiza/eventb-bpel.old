@@ -10,7 +10,8 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
 import org.eventb.core.IMachineRoot;
 
-import vutshila.labs.bpelgen.core.translation.Translator;
+import vutshila.labs.bpelgen.core.translation.BPELwriter;
+import vutshila.labs.bpelgen.core.translation.WSDLwriter;
 
 /**
  * Our sample action implements workbench action delegate. The action proxy will
@@ -21,8 +22,6 @@ import vutshila.labs.bpelgen.core.translation.Translator;
  * @see IWorkbenchWindowActionDelegate
  */
 public class Translate implements IWorkbenchWindowActionDelegate {
-    @SuppressWarnings("unused")
-    private static final int EXT_LE = 4;
     @SuppressWarnings("unused")
     private IWorkbenchWindow window;
 
@@ -39,7 +38,6 @@ public class Translate implements IWorkbenchWindowActionDelegate {
      * @see IWorkbenchWindowActionDelegate#run
      */
     public void run(IAction action) {
-	// XXX: need to use refreshLocal Method
 	IWorkbenchWindow window = PlatformUI.getWorkbench()
 		.getActiveWorkbenchWindow();
 	ISelection selection = window.getSelectionService().getSelection();
@@ -52,15 +50,19 @@ public class Translate implements IWorkbenchWindowActionDelegate {
 		IMachineRoot machine = (IMachineRoot) obj;
 		IProject project = machine.getEventBProject().getRodinProject()
 			.getProject();
-		IFile machineFile = project.getFile(machine.getElementName()
-			.concat(".bcm"));
-
-		if (!machineFile.exists())
-		    System.out.println(machineFile.getName()+" File does not exits");
-
-		Translator.translateEventb(machineFile, machine.getElementName());
-
-		System.out.println(machine.getElementName());
+		// Create BPEL file
+		IFile bpelFile = project.getFile(machine.getElementName()
+			.concat(".bpel"));
+		BPELwriter writer = new BPELwriter();
+		writer.init(machine);
+		writer.createFile(bpelFile);
+		
+		// Create WSDL file
+		IFile wsdlFile = project.getFile(machine.getElementName().concat(".wsdl"));
+		WSDLwriter wsdlWriter = new WSDLwriter(machine);
+		wsdlWriter.createFile(wsdlFile);
+		System.out.println("hello, world");
+		// Validate files
 	    }
 
 	    // handle Event-B machine file out of Event-B perspective
@@ -69,21 +71,21 @@ public class Translate implements IWorkbenchWindowActionDelegate {
 	    if (obj instanceof IFile) {
 		IFile machineFile = (IFile) obj;
 
-		// XXX: check if extension equals .bcm else load the .bcm file
-		if (machineFile.getFileExtension().equals("bcm")) {
-		    // String name = machineFile.getName().substring(0,
-		    // machineFile.getName().length() - EXT_LEN);
-		    String name = machineFile.getName();
-		    Translator.translateEventb(machineFile, name);
-		    
-		} else {
-		    IProject project = machineFile.getProject();
-		    IFile bcm = project.getFile(machineFile.getName()
-			    .replace("bum","bcm"));
-		    if (!bcm.exists())
-			System.out.println("file does not exist");
-		    else Translator.translateEventb(bcm, bcm.getName());
-		}
+//		if (machineFile.getFileExtension().equals("bcm")) {
+//		    
+//		    String name = machineFile.getName();
+//		    Translator.translateEventb(machineFile, name);
+//
+//		} else {
+//		    IProject project = machineFile.getProject();
+//		    IFile bcm = project.getFile(machineFile.getName().replace(
+//			    "bum", "bcm"));
+//		    if (!bcm.exists())
+//			System.out.println("file does not exist");
+//		    else
+//			Translator.translateEventb(bcm, bcm.getName());
+//		}
+		
 
 		System.out.println(machineFile.getName());
 
