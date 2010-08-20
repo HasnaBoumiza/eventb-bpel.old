@@ -63,13 +63,13 @@ public class WsdlDocumentCreator extends DocumentCreator {
 	definition.addNamespace("tns", tns);
 	definition.addNamespace("xsd", xsd);
 
-	HashTable<EventBPredicate> messageTable = new HashTable<EventBPredicate>();
-	ArrayList<EventBPredicate> operationList = new ArrayList<EventBPredicate>(
+	HashTable<PredicateString> messageTable = new HashTable<PredicateString>();
+	ArrayList<PredicateString> operationList = new ArrayList<PredicateString>(
 		0);
 
 	for (Axiom axiom : context.getAxiomsAsArray()) {
 	    String predicateString = axiom.getPredicate();
-	    EventBPredicate p = new EventBPredicate();
+	    PredicateString p = new PredicateString();
 	    if (p.createPredicate(predicateString)) {
 		if (p.getOperation().endsWith(MESSAGE_SUF)) {
 		    // TODO: insert to hash table
@@ -84,7 +84,7 @@ public class WsdlDocumentCreator extends DocumentCreator {
 	PortType portType = definition.createPortType();
 	portType.setQName(new QName("CHANGE_ME"));
 
-	for (EventBPredicate ePredicate : operationList) {
+	for (PredicateString ePredicate : operationList) {
 
 	    Operation operation = definition.createOperation();
 	    Input in = definition.createInput();
@@ -93,14 +93,14 @@ public class WsdlDocumentCreator extends DocumentCreator {
 	    // Operation input
 	    {
 		String inString = ePredicate.getInput();
-		List<EventBPredicate> messages = messageTable
+		List<PredicateString> messages = messageTable
 			.getHeapLocation(inString);
 
 		Message msg = definition.createMessage();
 		msg.setQName(new QName(inString));
 		// Create parts for the message
 
-		for (EventBPredicate p : messages) {
+		for (PredicateString p : messages) {
 		    Part part = definition.createPart();
 		    part.setName(p.getOperation());
 		    part.setTypeName(new QName(p.getOutput()));
@@ -114,14 +114,14 @@ public class WsdlDocumentCreator extends DocumentCreator {
 	    // Operation output
 	    {
 		String outString = ePredicate.getOutput();
-		List<EventBPredicate> messages = messageTable
+		List<PredicateString> messages = messageTable
 			.getHeapLocation(outString);
 
 		Message msg = definition.createMessage();
 		msg.setQName(new QName(outString));
 		// Create parts for the message
 
-		for (EventBPredicate p : messages) {
+		for (PredicateString p : messages) {
 		    Part part = definition.createPart();
 		    part.setName(p.getOperation());
 		    part.setTypeName(new QName(p.getOutput()));

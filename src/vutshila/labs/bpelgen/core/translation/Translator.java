@@ -3,16 +3,20 @@
  */
 package vutshila.labs.bpelgen.core.translation;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.Scanner;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eventb.core.IContextRoot;
+import org.eventb.core.IMachineRoot;
+import org.rodinp.core.IRodinDB;
+import org.rodinp.core.IRodinProject;
+import org.rodinp.core.RodinCore;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import vutshila.labs.bpelgen.BpelgenPlugin;
+import vutshila.labs.bpelgen.core.VLConstants;
+import vutshila.labs.bpelgen.core.XMLtool;
 
 /**
  * @author Ernest Mashele
@@ -21,39 +25,79 @@ import org.eclipse.core.runtime.CoreException;
 public class Translator {
 
     /**
-     * Translates Event-B to BPEL and WSDL
+     * Create BPEL and WSDL file
      * 
-     * @param filename
-     * @param machineName
-     * @throws FileNotFoundException
+     * @param machine
      */
-    public static void translateEventb(IFile machineFile, String machineName) {
+    public static void translateEventb(IMachineRoot machine) {
+
+	IProject project = machine.getEventBProject().getRodinProject()
+		.getProject();
+
+	// XXX move to a function in Translater class
+	IFile bcmFile = project
+		.getFile(machine.getElementName().concat(".bcm"));
+	XMLtool xml = new XMLtool(false, bcmFile);
+	Document doc = xml.getDocument();
+	Element root = doc.getDocumentElement();
+	String accurate = root.getAttribute(VLConstants.EVENT_B_ACCURATE);
+	// XXX test this before translation
+	boolean isAccurate = accurate.equals("true") ? true : false;
+
+	if (isAccurate) {
+	    // Create BPEL file
+	    IFile bpelFile = project.getFile(machine.getElementName().concat(
+		    ".bpel"));
+	    BPELwriter writer = new BPELwriter();
+	    writer.init(machine);
+	    writer.createFile(bpelFile);
+
+	    Element seesContext = (Element) root.getElementsByTagName(
+		    VLConstants.EVENT_B_CONTEXT).item(0);
+	    String targetSrc = seesContext
+		    .getAttribute(VLConstants.EVENT_B_TARGET);
+	    // Get the context file
+	    String target = targetSrc.substring(targetSrc.lastIndexOf("/") + 1,
+		    targetSrc.length() - 4);
+	    // Get the context file
+	    IContextRoot context = machine.getEventBProject().getContextRoot(
+		    target);
+	    // Create WSDL file
+	    IFile wsdlFile = project.getFile(machine.getElementName().concat(
+		    ".wsdl"));
+	    WSDLwriter wsdlWriter = new WSDLwriter(machine, context);
+	    wsdlWriter.createFile(wsdlFile);
+	    // Validate files
+	} else {
+	    BpelgenPlugin
+		    .logError(new Exception("Invalid event-b Machine"),
+			    "There seems to be an error in the Machine you are trying to translate");
+
+	}
+    }
+
+    /**
+     * Handle other machine files types
+     * 
+     * @param machineFile
+     */
+    public static void translateEventb(IFile machineFile) {
+	// TODO Auto-generated method stub
 	IProject project = machineFile.getProject();
-	IFile output = project.getFile("Translation.wsdl");
 
-	if (machineFile.exists()) {
-
-	    File file = machineFile.getLocation().toFile();
-	    Scanner s;
-	    try {
-		s = new Scanner(file);
-		System.out.println(s.nextLine());
-	    } catch (FileNotFoundException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
-
-	}
-	if (!output.exists()) {
-	    byte bytes[] = "Testing 1 2 3".getBytes();
-	    InputStream source = new ByteArrayInputStream(bytes);
-	    try {
-		output.create(source, IResource.FILE, null);
-	    } catch (CoreException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+	if (machineFile.getFileExtension().equals("bcm")) {
+	    // Handle .bcm file
+	    machineFile = project.getFile(machineFile.getName().replace("bcm",
+		    "bum"));
 	}
 
+	IWorkspaceRoot wroot = project.getWorkspace().getRoot();
+	IRodinDB rodinDB = RodinCore.valueOf(wroot);
+	IRodinProject rodinProject = rodinDB.getRodinProject(project.getName());
+
+	IMachineRoot machine = (IMachineRoot) rodinProject.getRodinFile(
+		machineFile.getName()).getRoot();
+
+	translateEventb(machine);
     }
 }

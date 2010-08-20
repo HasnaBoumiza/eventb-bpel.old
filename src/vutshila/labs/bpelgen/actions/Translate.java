@@ -1,7 +1,6 @@
 package vutshila.labs.bpelgen.actions;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -10,8 +9,7 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 import org.eclipse.ui.PlatformUI;
 import org.eventb.core.IMachineRoot;
 
-import vutshila.labs.bpelgen.core.translation.BPELwriter;
-import vutshila.labs.bpelgen.core.translation.WSDLwriter;
+import vutshila.labs.bpelgen.core.translation.Translator;
 
 /**
  * Our sample action implements workbench action delegate. The action proxy will
@@ -38,9 +36,11 @@ public class Translate implements IWorkbenchWindowActionDelegate {
      * @see IWorkbenchWindowActionDelegate#run
      */
     public void run(IAction action) {
+
 	IWorkbenchWindow window = PlatformUI.getWorkbench()
 		.getActiveWorkbenchWindow();
 	ISelection selection = window.getSelectionService().getSelection();
+
 	if (selection instanceof IStructuredSelection) {
 	    IStructuredSelection ss = (IStructuredSelection) selection;
 	    Object obj = ss.getFirstElement();
@@ -48,47 +48,16 @@ public class Translate implements IWorkbenchWindowActionDelegate {
 	    // handle Event-B machine file from Event-B perspective
 	    if (obj instanceof IMachineRoot) {
 		IMachineRoot machine = (IMachineRoot) obj;
-		IProject project = machine.getEventBProject().getRodinProject()
-			.getProject();
-		// Create BPEL file
-		IFile bpelFile = project.getFile(machine.getElementName()
-			.concat(".bpel"));
-		BPELwriter writer = new BPELwriter();
-		writer.init(machine);
-		writer.createFile(bpelFile);
-		
-		// Create WSDL file
-		IFile wsdlFile = project.getFile(machine.getElementName().concat(".wsdl"));
-		WSDLwriter wsdlWriter = new WSDLwriter(machine);
-		wsdlWriter.createFile(wsdlFile);
-		System.out.println("hello, world");
-		// Validate files
+		Translator.translateEventb(machine);
 	    }
 
 	    // handle Event-B machine file out of Event-B perspective
 	    // i.e. .bum .bcm files
 
-	    if (obj instanceof IFile) {
+	    else if (obj instanceof IFile) {
+
 		IFile machineFile = (IFile) obj;
-
-//		if (machineFile.getFileExtension().equals("bcm")) {
-//		    
-//		    String name = machineFile.getName();
-//		    Translator.translateEventb(machineFile, name);
-//
-//		} else {
-//		    IProject project = machineFile.getProject();
-//		    IFile bcm = project.getFile(machineFile.getName().replace(
-//			    "bum", "bcm"));
-//		    if (!bcm.exists())
-//			System.out.println("file does not exist");
-//		    else
-//			Translator.translateEventb(bcm, bcm.getName());
-//		}
-		
-
-		System.out.println(machineFile.getName());
-
+		Translator.translateEventb(machineFile);
 	    }
 
 	}

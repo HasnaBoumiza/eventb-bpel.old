@@ -48,12 +48,12 @@ public class XMLtool {
 
 	else {
 	    DocumentBuilderFactory factory;
-
 	    factory = DocumentBuilderFactory.newInstance();
-	    factory.setValidating(true); // Check errors
+
 	    try {
-		doc = factory.newDocumentBuilder().parse(
-			file.getLocation().toFile());
+		builder = factory.newDocumentBuilder();
+		doc = builder.parse(file.getLocation().toFile());
+		doc.getDocumentElement().normalize();
 	    } catch (ParserConfigurationException e) {
 		BpelgenPlugin.logError(e, e.getMessage());
 	    } catch (SAXException e) {
