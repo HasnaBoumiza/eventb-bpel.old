@@ -16,61 +16,58 @@ import vutshila.labs.bpelgen.core.translation.Translator;
 
 public class Translate implements IObjectActionDelegate {
 
-    @SuppressWarnings("unused")
-    private Shell shell;
+	@SuppressWarnings("unused")
+	private Shell shell;
 
-    /**
-     * Constructor for Action1.
-     */
-    public Translate() {
-	super();
-    }
+	/**
+	 * Constructor for Action1.
+	 */
+	public Translate() {
+		super();
+	}
 
-    /**
-     * @see IObjectActionDelegate#setActivePart(IAction, IWorkbenchPart)
-     */
-    public void setActivePart(IAction action, IWorkbenchPart targetPart) {
-	shell = targetPart.getSite().getShell();
-    }
+	/**
+	 * @see IObjectActionDelegate#setActivePart(IAction, IWorkbenchPart)
+	 */
+	public void setActivePart(IAction action, IWorkbenchPart targetPart) {
+		shell = targetPart.getSite().getShell();
+	}
 
-    /**
-     * @see IActionDelegate#run(IAction)
-     */
-    public void run(IAction action) {
-	IWorkbenchWindow window = PlatformUI.getWorkbench()
-		.getActiveWorkbenchWindow();
-	ISelection selection = window.getSelectionService().getSelection();
+	/**
+	 * @see IActionDelegate#run(IAction)
+	 */
+	public void run(IAction action) {
+		IWorkbenchWindow window = PlatformUI.getWorkbench()
+				.getActiveWorkbenchWindow();
+		ISelection selection = window.getSelectionService().getSelection();
 
-	if (selection instanceof IStructuredSelection) {
-	    IStructuredSelection ss = (IStructuredSelection) selection;
-	    Object obj = ss.getFirstElement();
+		if (selection instanceof IStructuredSelection) {
+			IStructuredSelection ss = (IStructuredSelection) selection;
+			Object obj = ss.getFirstElement();
 
-	    // handle Event-B machine file from Event-B perspective
-	    if (obj instanceof IMachineRoot) {
-		IMachineRoot machine = (IMachineRoot) obj;
-		Translator.translateEventb(machine);
-	    }
+			// handle Event-B machine file from Event-B perspective
+			if (obj instanceof IMachineRoot) {
+				IMachineRoot machine = (IMachineRoot) obj;
+				Translator.translateEventb(machine);
+			}
 
-	    // handle Event-B machine file out of Event-B perspective
-	    // i.e. .bum .bcm files
+			// handle Event-B machine file out of Event-B perspective
+			// i.e. .bum .bcm files
 
-	    // handle Event-B machine file out of Event-B perspective
-	    // i.e. .bum .bcm files
+			else if (obj instanceof IFile) {
 
-	    else if (obj instanceof IFile) {
+				IFile machineFile = (IFile) obj;
+				Translator.translateEventb(machineFile);
+			}
 
-		IFile machineFile = (IFile) obj;
-		Translator.translateEventb(machineFile);
-	    }
+		}
 
 	}
 
-    }
-
-    /**
-     * @see IActionDelegate#selectionChanged(IAction, ISelection)
-     */
-    public void selectionChanged(IAction action, ISelection selection) {
-    }
+	/**
+	 * @see IActionDelegate#selectionChanged(IAction, ISelection)
+	 */
+	public void selectionChanged(IAction action, ISelection selection) {
+	}
 
 }

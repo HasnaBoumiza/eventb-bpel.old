@@ -1,15 +1,15 @@
 package vutshila.labs.bpelgen.core.translation;
 
+import vutshila.labs.bpelgen.core.EBConstant;
+
 /**
  * 
  * @author Mashele Ernest
  * @author Kabelo Ramongane
- *
+ * 
  */
 
 public class PredicateString {
-	final static String uE = "\u2208";
-	final static String uArrow = "\u2192";
 
 	private String operation;
 	private String input;
@@ -49,9 +49,10 @@ public class PredicateString {
 	}
 
 	public boolean createPredicate(String predicate) {
-		if ((predicate.contains(uE)) && (predicate.contains(uArrow))) {
-			int epos = predicate.indexOf(uE);
-			int arrowpos = predicate.indexOf(uArrow);
+		if ((predicate.contains(EBConstant.MATH_ELEMENT))
+				&& (predicate.contains(EBConstant.MATH_ARROW))) {
+			int epos = predicate.indexOf(EBConstant.MATH_ELEMENT);
+			int arrowpos = predicate.indexOf(EBConstant.MATH_ARROW);
 
 			if (epos < arrowpos) {
 				String left = predicate.substring(0, epos);
@@ -72,4 +73,21 @@ public class PredicateString {
 
 	}
 
+	public void createPredicateString(String operation, String input,
+			String output) {
+		setInput(input);
+		setOutput(output);
+		setOperation(operation);
+	}
+
+	/**
+	 * get the RAW format Predicate string
+	 * 
+	 * @return
+	 */
+	public String getPredicateString() {
+		String pred1 = operation.concat(EBConstant.MATH_ELEMENT);
+		String pred2 = (input.concat(input)).concat(EBConstant.MATH_ARROW);
+		return (pred1.concat(pred2)).concat(output);
+	}
 }
