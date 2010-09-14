@@ -21,6 +21,7 @@ public class ContextTranslator {
 
 	private IContextRoot context;
 	private Document document;
+
 	public void init(IMachineRoot machine, IContextRoot context) {
 
 		XMLtool xml = new XMLtool(true, null);
@@ -49,16 +50,27 @@ public class ContextTranslator {
 
 				if (setName.endsWith(EBConstant.TYPE)) {
 					// Types
-					System.out.println("ComplexType name: " + setName);
+					
 					for (IAxiom axiom : axioms) {
 						PredicateString ps = new PredicateString();
 						if (ps.createPredicate(axiom.getPredicateString())) {
 							if (ps.getInput().equals(setName)) {
+								System.out.println("ComplexType name: " + setName);
 								// Testing xsd types
-								String type = ps.getOutput().equals("\u2124") ? "xs:int" : "xs:string";
-								System.out
-										.printf("element name: %s, type: %s\n",
-												ps.getOperation(), type);
+								String type = "";
+								for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
+									if (EBConstant.EVENTB_TYPES[i].equals(ps
+											.getOutput())) {
+										type = EBConstant.XSD_TYPES[i];
+										break;
+									}
+								}
+								if (type.equals(""))
+									noErrors = false;
+								
+								System.out.printf(
+										"element name: %s, type: %s\n", ps
+												.getOperation(), type);
 							}
 						} else {
 							noErrors = false;
@@ -72,8 +84,7 @@ public class ContextTranslator {
 						PredicateString ps = new PredicateString();
 						if (ps.createPredicate(axiom.getPredicateString())) {
 							if (ps.getInput().equals(setName)
-									&& ps.getOutput()
-											.endsWith(EBConstant.TYPE)) {
+									&& ps.getOutput().endsWith(EBConstant.TYPE)) {
 								System.out.printf("part name: %s, type: %s\n",
 										ps.getOperation(), ps.getOutput());
 							}
@@ -97,13 +108,14 @@ public class ContextTranslator {
 										"operation name: %s, input message: %s, output message: %s\n",
 										ps.getOperation(), ps.getInput(), ps
 												.getOutput());
-						// TODO using the same operation create a binding element
+						// TODO using the same operation create a binding
+						// element
 					}
 				} else {
 					noErrors = false;
 				}
 			}
-			
+
 		} catch (RodinDBException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();

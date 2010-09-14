@@ -87,7 +87,7 @@ public class PredicateString {
 	 */
 	public String getPredicateString() {
 		String pred1 = operation.concat(EBConstant.MATH_ELEMENT);
-		String pred2 = (input.concat(input)).concat(EBConstant.MATH_ARROW);
-		return (pred1.concat(pred2)).concat(output);
+		String pred2 = (input.concat(EBConstant.MATH_ARROW)).concat(output);
+		return pred1.concat(pred2);
 	}
 }

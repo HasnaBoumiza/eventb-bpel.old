@@ -3,16 +3,24 @@
  */
 package vutshila.labs.bpelgen.core;
 
+import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
-import org.eventb.core.ICommentedElement;
-import org.eventb.core.IIdentifierElement;
-import org.eventb.core.ILabeledElement;
-import org.eventb.core.IRefinesEvent;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eventb.core.IAxiom;
+import org.eventb.core.ICarrierSet;
+import org.eventb.core.IConfigurationElement;
+import org.eventb.core.IConstant;
+import org.eventb.core.IContextRoot;
+import org.eventb.core.IConvergenceElement;
+import org.eventb.core.IEvent;
+import org.eventb.core.IMachineRoot;
 import org.rodinp.core.IInternalElement;
-import org.rodinp.core.IInternalElementType;
 import org.rodinp.core.IRodinFile;
 import org.rodinp.core.IRodinProject;
+import org.rodinp.core.RodinCore;
 import org.rodinp.core.RodinDBException;
+
+import vutshila.labs.bpelgen.core.translation.PredicateString;
 
 /**
  * @author Ernest Mashele<mashern@tuks.co.za>
@@ -21,88 +29,108 @@ import org.rodinp.core.RodinDBException;
 public class RodinHelper {
 
 	/**
-	 * Create a Rodin File construct (e.g. Machine, Context), code from
-	 * http://wiki.event-b.org/
+	 * Create a Rodin File construct (e.g. Machine, Context) (adapted from
+	 * org.eventb.ui.wizards.NewComponentWizard.java doFinish())
 	 * 
 	 * @param filename
 	 * @param project
 	 * @param comment
 	 * @return rodinFile the created Rodin File
+	 * @throws RodinDBException
 	 */
+	private static int axiomCount = 0;
+
 	public static IRodinFile createRodinConstruct(final String filename,
-			final IRodinProject project, final String comment) {
-
-		if (null == project) {
+			final IRodinProject project) throws RodinDBException {
+		if (project == null)
 			return null;
-		}
 
-		try {
-			final IRodinFile rodinFile = project.getRodinFile(filename);
-			rodinFile.create(true, null);
-			rodinFile.getResource().setDerived(true);
+		final IRodinFile rodinFile = project.getRodinFile(filename);
 
-			if (rodinFile instanceof ICommentedElement) {
-				if (comment != null && !comment.trim().equals("")) {
-					((ICommentedElement) rodinFile).setComment(comment, null);
+		RodinCore.run(new IWorkspaceRunnable() {
+
+			@Override
+			public void run(IProgressMonitor monitor) throws CoreException {
+				// do not overwrite existing file
+				rodinFile.create(false, monitor);
+				rodinFile.getResource().setDerived(true);
+
+				final IInternalElement rodinRoot = rodinFile.getRoot();
+				((IConfigurationElement) rodinRoot).setConfiguration(
+						IConfigurationElement.DEFAULT_CONFIGURATION, monitor);
+
+				if (rodinRoot instanceof IMachineRoot) {
+					final IEvent init = rodinRoot.createChild(
+							IEvent.ELEMENT_TYPE, null, monitor);
+					init.setLabel(IEvent.INITIALISATION, monitor);
+					init.setConvergence(
+							IConvergenceElement.Convergence.ORDINARY, monitor);
+					init.setExtended(false, monitor);
 				}
+
+				rodinFile.save(null, false);
 			}
+		}, null);
 
-			return rodinFile;
-
-		} catch (RodinDBException e) {
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-		return null;
+		return rodinFile;
 	}
 
 	/**
-	 * Create a Rodin element ,code from http://wiki.event-b.org/
+	 * Create Axiom
 	 * 
-	 * @param type
-	 * @param name
-	 * @param parent
-	 * @param rodinFile
-	 * @param comment
-	 * @return rodinElement the created element
+	 * @param contextRoot
+	 * @param firstTerm
+	 * @param middleTerm
+	 * @param lastTerm
+	 * @throws RodinDBException
 	 */
-	@SuppressWarnings("unchecked")
-	public static IInternalElement createRodinElement(
-			final IInternalElementType type, final String name,
-			final IInternalElement parent, final IRodinFile rodinFile,
-			final String comment) {
+	public static void createAxiom(final IInternalElement contextRoot,
+			final String firstTerm, final String middleTerm,
+			final String lastTerm, boolean reset) throws RodinDBException {
 
-		if (null == parent)
-			return null;
-
-		try {
-			final IInternalElement rodinElement = parent.getInternalElement(
-					type, name);
-			rodinElement.create(null, null);
-
-			if (rodinElement instanceof ILabeledElement) {
-				((ILabeledElement) rodinElement).setLabel(name, null);
+		if (contextRoot instanceof IContextRoot) {
+			if (reset) {
+				axiomCount = 0;
 			}
-			if (rodinElement instanceof IIdentifierElement) {
-				((IIdentifierElement) rodinElement).setIdentifierString(name,
-						null);
-			}
+			PredicateString ps = new PredicateString();
+			ps.createPredicateString(firstTerm, middleTerm, lastTerm);
+			String predicate = ps.getPredicateString();
 
-			if (rodinElement instanceof ICommentedElement) {
-				((ICommentedElement) rodinElement).setComment(comment, null);
-			}
-
-			if (rodinElement instanceof IRefinesEvent) {
-				((IRefinesEvent) rodinElement)
-						.setAbstractEventLabel(name, null);
-			}
-
-			return rodinElement;
-
-		} catch (RodinDBException e) {
-			e.printStackTrace();
+			IAxiom axiom = contextRoot.createChild(IAxiom.ELEMENT_TYPE, null,
+					null);
+			axiom.setPredicateString(predicate, null);
+			axiom.setLabel("axm" + (++axiomCount), null);
+			System.out.println(axiomCount);
 		}
-		return null;
+
+	}
+
+	/**
+	 * 
+	 * @param contextRoot
+	 * @param name
+	 * @throws RodinDBException
+	 */
+	public static void createConstant(final IInternalElement contextRoot,
+			final String name) throws RodinDBException {
+		if (contextRoot instanceof IContextRoot) {
+			IConstant constant = contextRoot.createChild(
+					IConstant.ELEMENT_TYPE, null, null);
+			constant.setIdentifierString(name, null);
+		}
+	}
+
+	/**
+	 * 
+	 * @param contextRoot
+	 * @throws RodinDBException
+	 */
+	public static void createCarrierSet(final IInternalElement contextRoot,
+			final String name) throws RodinDBException {
+		if (contextRoot instanceof IContextRoot) {
+			ICarrierSet carrierSet = contextRoot.createChild(
+					ICarrierSet.ELEMENT_TYPE, null, null);
+			carrierSet.setIdentifierString(name, null);
+		}
 	}
 }
