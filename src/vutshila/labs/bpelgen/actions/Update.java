@@ -30,17 +30,6 @@ public class Update implements IWorkbenchWindowActionDelegate {
 		if (selection instanceof IStructuredSelection) {
 			IStructuredSelection ss = (IStructuredSelection) selection;
 			Object obj = ss.getFirstElement();
-
-			// handle Event-B machine file from Event-B perspective
-			if (obj instanceof IContextRoot) {
-				IContextRoot context = (IContextRoot) obj;
-				
-				// Move to translator
-				ContextTranslator trans = new ContextTranslator();
-				trans.init(null, context);
-				trans.createTypes();				
-			}
-
 		}
 	}
 

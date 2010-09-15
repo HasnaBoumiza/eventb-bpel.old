@@ -1,11 +1,11 @@
 /**
- * 
+ *
  */
 package vutshila.labs.bpelgen.core;
 
 /**
  * @author Ernest Mashele <mashern@tuks.co.za>
- * 
+ *
  */
 public interface EBConstant {
 
@@ -31,7 +31,7 @@ public interface EBConstant {
 	final String MACHINE_EXTENSION = ".bum";
 	final String BPEL_EXTENSION = ".bpel";
 	final String WSDL_EXTENSION = ".wsdl";
-	
+
 	// Mathematical symbols
 	final String MATH_ELEMENT = "\u2208";
 	final String MATH_ARROW = "\u2192";

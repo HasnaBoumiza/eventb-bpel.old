@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package vutshila.labs.bpelgen.core.translation;
 
@@ -20,70 +20,63 @@ import vutshila.labs.bpelgen.core.XMLtool;
 
 /**
  * @author Ernest Mashele
- * 
+ *
  */
 public class Translator {
 
 	/**
 	 * Create BPEL and WSDL file
-	 * 
+	 *
 	 * @param machine
 	 */
 	public static void translateEventb(IMachineRoot machine) {
 
-		// IProject project = machine.getEventBProject().getRodinProject()
-		// .getProject();
-		//
-		// // XXX move to a function in Translater class
-		// IFile bcmFile = project
-		// .getFile(machine.getElementName().concat(".bcm"));
-		// XMLtool xml = new XMLtool(false, bcmFile);
-		// Document doc = xml.getDocument();
-		// Element root = doc.getDocumentElement();
-		// String accurate = root.getAttribute(VLConstants.EVENTB_ACCURATE);
-		// // XXX test this before translation
-		// boolean isAccurate = accurate.equals("true") ? true : false;
-		//
-		// if (isAccurate) {
-		// // Create BPEL file
-		// IFile bpelFile = project.getFile(machine.getElementName().concat(
-		// ".bpel"));
-		// BPELwriter writer = new BPELwriter();
-		// writer.init(machine);
-		// writer.createFile(bpelFile);
-		//
-		// Element seesContext = (Element) root.getElementsByTagName(
-		// VLConstants.EVENTB_CONTEXT).item(0);
-		// String targetSrc = seesContext
-		// .getAttribute(VLConstants.EVENTB_TARGET);
-		// // Get the context file
-		// String target = targetSrc.substring(targetSrc.lastIndexOf("/") + 1,
-		// targetSrc.length() - 4);
-		// // Get the context file
-		// IContextRoot context = machine.getEventBProject().getContextRoot(
-		// target);
-		IContextRoot context = machine.getEventBProject().getContextRoot(
-				"PurchaseOrderC");
-		ContextTranslator trans = new ContextTranslator();
-		trans.init(machine, context);
-		trans.createTypes();
-		// // Create WSDL file
-		// IFile wsdlFile = project.getFile(machine.getElementName().concat(
-		// ".wsdl"));
-		// WSDLwriter wsdlWriter = new WSDLwriter(machine, context);
-		// wsdlWriter.createFile(wsdlFile);
-		// // Validate files
-		// } else {
-		// BpelgenPlugin
-		// .logError(new Exception("Invalid event-b Machine"),
-		// "There seems to be an error in the Machine you are trying to translate");
-		//
-		// }
+		IProject project = machine.getEventBProject().getRodinProject()
+				.getProject();
+		IFile bcmFile = project
+				.getFile(machine.getElementName().concat(".bcm"));
+		XMLtool xml = new XMLtool(false, bcmFile);
+		Document doc = xml.getDocument();
+		Element root = doc.getDocumentElement();
+		String accurate = root.getAttribute(EBConstant.EVENTB_ACCURATE);
+
+		boolean isAccurate = accurate.equals("true") ? true : false;
+
+		if (isAccurate) {
+			// Create BPEL file
+			IFile bpelFile = project.getFile(machine.getElementName().concat(
+					".bpel"));
+			BPELwriter writer = new BPELwriter();
+			writer.init(machine);
+			writer.createFile(bpelFile);
+
+			Element seesContext = (Element) root.getElementsByTagName(
+					EBConstant.EVENTB_SEES_CONTEXT).item(0);
+			String targetSrc = seesContext
+					.getAttribute(EBConstant.EVENTB_TARGET);
+			// Get the context file
+			String target = targetSrc.substring(targetSrc.lastIndexOf("/") + 1,
+					targetSrc.length() - 4);
+			// Get the context file
+			IContextRoot context = machine.getEventBProject().getContextRoot(
+					target);
+			IFile wsdlFile = project.getFile(machine.getElementName().concat(
+					".wsdl"));
+			ContextTranslator contextTranslator = new ContextTranslator();
+			contextTranslator.init(machine, context);
+			contextTranslator.createFile(wsdlFile);
+
+		} else {
+			BpelgenPlugin
+					.logError(new Exception("Invalid event-b Machine"),
+							"There seems to be an error in the Machine you are trying to translate");
+
+		}
 	}
 
 	/**
 	 * Handle other machine files types
-	 * 
+	 *
 	 * @param machineFile
 	 */
 	public static void translateEventb(IFile machineFile) {

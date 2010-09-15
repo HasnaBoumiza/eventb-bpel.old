@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Bundle-Name
-Bundle-SymbolicName: vutshila.labs.bpelgen; singleton:=true
+Bundle-SymbolicName: eventb_bpel;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Activator: vutshila.labs.bpelgen.BpelgenPlugin
 Bundle-Vendor: %Bundle-Vendor
