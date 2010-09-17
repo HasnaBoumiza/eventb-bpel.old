@@ -3,6 +3,8 @@
  */
 package vutshila.labs.bpelgen.core;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -15,6 +17,7 @@ import org.eventb.core.IConvergenceElement;
 import org.eventb.core.IEvent;
 import org.eventb.core.IMachineRoot;
 import org.rodinp.core.IInternalElement;
+import org.rodinp.core.IRodinDB;
 import org.rodinp.core.IRodinFile;
 import org.rodinp.core.IRodinProject;
 import org.rodinp.core.RodinCore;
@@ -92,15 +95,27 @@ public class RodinHelper {
 			if (reset) {
 				axiomCount = 0;
 			}
+			
 			PredicateString ps = new PredicateString();
 			ps.createPredicateString(firstTerm, middleTerm, lastTerm);
 			String predicate = ps.getPredicateString();
+			
+			IContextRoot croot = (IContextRoot) contextRoot;
+			IAxiom[] axioms = croot.getAxioms();
+			
+			for (IAxiom a :axioms){
+				PredicateString p = new PredicateString();
+				p.createPredicate(a.getPredicateString());
+				
+				if (p.equals(ps)){
+					return;
+				}
+			}
 
 			IAxiom axiom = contextRoot.createChild(IAxiom.ELEMENT_TYPE, null,
 					null);
 			axiom.setPredicateString(predicate, null);
 			axiom.setLabel("axm" + (++axiomCount), null);
-			System.out.println(axiomCount);
 		}
 
 	}
@@ -114,6 +129,15 @@ public class RodinHelper {
 	public static void createConstant(final IInternalElement contextRoot,
 			final String name) throws RodinDBException {
 		if (contextRoot instanceof IContextRoot) {
+			IContextRoot croot = (IContextRoot) contextRoot;
+			IConstant constants[] = croot.getConstants();
+
+			for (IConstant cons : constants) {
+				if (cons.getIdentifierString().equals(name)) {
+					return;
+				}
+			}
+			
 			IConstant constant = contextRoot.createChild(
 					IConstant.ELEMENT_TYPE, null, null);
 			constant.setIdentifierString(name, null);
@@ -128,9 +152,31 @@ public class RodinHelper {
 	public static void createCarrierSet(final IInternalElement contextRoot,
 			final String name) throws RodinDBException {
 		if (contextRoot instanceof IContextRoot) {
+			IContextRoot croot = (IContextRoot) contextRoot;
+			ICarrierSet[] sets = croot.getCarrierSets();
+			
+			for (ICarrierSet set :sets){
+				if (set.getIdentifierString().equals(name)){
+					return;
+				}
+			}
+			
 			ICarrierSet carrierSet = contextRoot.createChild(
 					ICarrierSet.ELEMENT_TYPE, null, null);
 			carrierSet.setIdentifierString(name, null);
 		}
+	}
+
+	/**
+	 * Get a Rodin project reference
+	 * 
+	 * @param project
+	 * @return
+	 */
+	public static IRodinProject getRodinProject(IProject project) {
+
+		IWorkspaceRoot wroot = project.getWorkspace().getRoot();
+		IRodinDB rodinDB = RodinCore.valueOf(wroot);
+		return rodinDB.getRodinProject(project.getName());
 	}
 }

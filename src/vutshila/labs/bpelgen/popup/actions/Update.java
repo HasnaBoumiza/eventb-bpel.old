@@ -17,7 +17,6 @@ import org.rodinp.core.IRodinProject;
 import org.rodinp.core.RodinCore;
 import org.rodinp.core.RodinDBException;
 
-import vutshila.labs.bpelgen.core.EBConstant;
 import vutshila.labs.bpelgen.core.translation.WSDLTranslator;
 
 public class Update implements IObjectActionDelegate {
@@ -66,10 +65,10 @@ public class Update implements IObjectActionDelegate {
 				IRodinProject rodinProject = rodinDB.getRodinProject(project
 						.getName());
 
-				WSDLTranslator wsdl = new WSDLTranslator();
+				WSDLTranslator wsdlTranslator = new WSDLTranslator();
+				IFile wsdlFile = project.getFile("PurchaseOrderM.wsdl");
 				try {
-					wsdl.init(bpelfile.getName().substring(0,
-							bpelfile.getName().indexOf(EBConstant.PERIOD)), rodinProject);
+					wsdlTranslator.init(wsdlFile, rodinProject);
 				} catch (RodinDBException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

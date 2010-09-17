@@ -1,13 +1,16 @@
 package vutshila.labs.bpelgen.actions;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
-import org.eventb.core.IContextRoot;
+import org.rodinp.core.IRodinProject;
 
-import vutshila.labs.bpelgen.core.translation.ContextTranslator;
+import vutshila.labs.bpelgen.core.EBConstant;
+import vutshila.labs.bpelgen.core.RodinHelper;
+import vutshila.labs.bpelgen.core.translation.WSDLTranslator;
 
 public class Update implements IWorkbenchWindowActionDelegate {
 	private IWorkbenchWindow window;
@@ -29,7 +32,27 @@ public class Update implements IWorkbenchWindowActionDelegate {
 
 		if (selection instanceof IStructuredSelection) {
 			IStructuredSelection ss = (IStructuredSelection) selection;
+
 			Object obj = ss.getFirstElement();
+
+			if (obj instanceof IFile
+					&& ((IFile) obj).getFileExtension().equals(
+							EBConstant.BPEL_EXTENSION)) {
+				IRodinProject rodinProject = RodinHelper
+						.getRodinProject(((IFile) obj).getProject());
+				// Create WSDL
+				IFile wsdlFile = ((IFile) obj).getProject().getFile(
+						"PurchaseOrderM.wsdl");
+				WSDLTranslator wsdlTranslator = new WSDLTranslator();
+				try {
+					wsdlTranslator.init(wsdlFile, rodinProject);
+				} catch (Exception e) {
+					System.err.printf(
+							"failed creating Context file. exception: %s", e
+									.getMessage());
+				}
+				// TODO (mashern) Create Machine after wsdl
+			}
 		}
 	}
 
