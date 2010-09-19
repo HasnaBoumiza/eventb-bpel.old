@@ -16,7 +16,7 @@
             </separator>
          </menu>
          <action
-               class="vutshila.labs.bpelgen.actions.Translate"
+               class="za.vutshilalabs.bpelgen.ui.actions.Translate"
                icon="icons/translate.png"
                id="vutshila.labs.bpelgen.actions.Translate"
                label="%action.label"
@@ -28,7 +28,7 @@
                <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
          </action>
           <action
-                class="vutshila.labs.bpelgen.actions.Update"
+                class="za.vutshilalabs.bpelgen.ui.actions.Update"
                 enablesFor="+"
                 id="vutshila.labs.bpelgen.actions.Update"
                 label="%action.label.0"
@@ -56,7 +56,7 @@
             </separator>
          </menu>
          <action
-               class="vutshila.labs.bpelgen.popup.actions.Translate"
+               class="za.vutshilalabs.bpelgen.ui.popup.actions.Translate"
                enablesFor="+"
                id="vutshila.labs.bpelgen.translate"
                label="%action.label.1"
@@ -79,7 +79,7 @@
             </separator>
          </menu>
          <action
-               class="vutshila.labs.bpelgen.popup.actions.Update"
+               class="za.vutshilalabs.bpelgen.ui.popup.actions.Update"
                enablesFor="+"
                id="vutshila.labs.bpelgen.update"
                label="%action.label.2"
@@ -87,7 +87,7 @@
 			   <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
          </action>
           <action
-               class="vutshila.labs.bpelgen.popup.actions.Translate"
+               class="za.vutshilalabs.bpelgen.ui.popup.actions.Translate"
                enablesFor="+"
                id="vutshila.labs.bpelgen.translate"
                label="%action.label.3"
@@ -96,7 +96,7 @@
                <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
          </action>
          <action
-               class="vutshila.labs.bpelgen.popup.actions.CheckXML"
+               class="za.vutshilalabs.bpelgen.ui.popup.actions.CheckXML"
                enablesFor="1"
                id="vutshila.labs.bpelgen.checkXML"
                label="%action.label.4"
@@ -112,12 +112,32 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            class="vutshila.labs.bpelgen.editors.XMLEditor"
+            class="za.vutshilalabs.bpelgen.ui.editors.XMLEditor"
             contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
             extensions="wsdl, bpel"
             id="vutshila.labs.bpelgen.editors.XMLEditor"
             name="%editor.name">
       </editor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <navigatorContent
+            contentProvider="za.vutshilalabs.bpelgen.ui.BpelgenContent"
+            id="eventb-bpel.bpelgenContent"
+            labelProvider="za.vutshilalabs.bpelgen.ui.BpelgenLabelProvider"
+            name="BPEL Generator Files"
+            priority="lower">
+         <triggerPoints>
+            <instanceof
+                  value="org.rodinp.core.IRodinProject">
+            </instanceof>
+         </triggerPoints>
+         <possibleChildren>
+            <instanceof
+                  value="org.eclipse.core.resources.IFile">
+            </instanceof>
+         </possibleChildren>
+      </navigatorContent>
    </extension>
 
 </plugin>

@@ -1,0 +1,223 @@
+/**
+ * 
+ */
+package za.vutshilalabs.bpelgen.core.translation;
+
+import java.io.StringWriter;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
+import org.eventb.core.IEvent;
+import org.eventb.core.IInvariant;
+import org.eventb.core.IMachineRoot;
+import org.eventb.core.IParameter;
+import org.eventb.core.IVariable;
+import org.rodinp.core.RodinDBException;
+import org.w3c.dom.Comment;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import za.vutshilalabs.bpelgen.BpelgenPlugin;
+import za.vutshilalabs.bpelgen.core.XMLtool;
+
+/**
+ * @author Ernest Mashele
+ * 
+ */
+public class BPELwriter {
+
+	private IMachineRoot machine;
+	private Document document;
+	private Element process;
+	private Element partnerLinks;
+	private final String STUB = "STUB";
+
+	/**
+	 * Create BPEL simple activities from Event-B events
+	 */
+	private void createActivities() {
+		// XXX handle receive and structured activities
+		IEvent[] events;
+		try {
+			events = machine.getEvents();
+
+			for (IEvent event : events) {
+				String eventName = event.getLabel();
+
+				// XXX: why are we doing this?
+				if (!eventName.equalsIgnoreCase("initialisation")) {
+
+					Element invoke = document.createElement("invoke");
+					invoke.setAttribute("name", eventName);
+					invoke.setAttribute("partnerLink", STUB);
+					invoke.setAttribute("portType", STUB);
+					invoke.setAttribute("operation", STUB);
+					Comment info = document
+							.createComment("TODO Auto-generated invoke stub");
+					process.appendChild(info);
+
+					// Getting all parameters
+					IParameter[] params = event.getParameters();
+					for (IParameter param : params) {
+						invoke.setAttribute("inputVariable", param
+								.getIdentifierString());
+					}
+
+					process.appendChild(invoke);
+				}
+			}
+		} catch (RodinDBException e) {
+			// TODO Auto-generated catch block
+			BpelgenPlugin.logError(e, e.getMessage());
+		}
+	}
+
+	public void createFile(IFile file) {
+		TransformerFactory factory;
+		Source source;
+		Transformer transformer;
+		Result result;
+		try {
+			factory = TransformerFactory.newInstance();
+			transformer = factory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			source = new DOMSource(document);
+			result = new StreamResult(file.getLocation().toFile());
+			transformer.transform(source, result);
+			file.refreshLocal(0, null);
+
+		} catch (TransformerConfigurationException e) {
+			BpelgenPlugin.logError(e, e.getMessage());
+		} catch (TransformerException e) {
+			BpelgenPlugin.logError(e, e.getMessage());
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Create BPEL Variables
+	 */
+	private void createVariables() {
+		Element variables = document.createElement("variables");
+		IVariable[] eventbVariables;
+		IInvariant invariants[];
+		try {
+			eventbVariables = machine.getVariables();
+			invariants = machine.getInvariants();
+
+			for (IVariable v : eventbVariables) {
+				Element variable = document.createElement("variable");
+				String name = v.getIdentifierString();
+				variable.setAttribute("name", name);
+				String type = "UNDEFINED";
+
+				for (IInvariant in : invariants) {
+					// Expecting "variable ??? type"
+					String predicate = in.getPredicateString();
+					if (predicate.startsWith(name)) {
+						// XXX use regular expressions
+						type = predicate.split(" ")[2];
+						break;
+					}
+				}
+				variable.setAttribute("messageType", type);
+				variables.appendChild(variable);
+			}
+		} catch (RodinDBException e) {
+			e.printStackTrace();
+			BpelgenPlugin.logError(e, e.getMessage());
+		}
+
+		process.appendChild(variables);
+	}
+
+	/**
+	 * Return XML data
+	 * 
+	 * @return
+	 */
+	public String documentString() {
+
+		TransformerFactory factory;
+		Source source;
+		Transformer transformer;
+		StringWriter sw;
+		Result result;
+		try {
+			factory = TransformerFactory.newInstance();
+			transformer = factory.newTransformer();
+			source = new DOMSource(document);
+			sw = new StringWriter();
+			result = new StreamResult(sw);
+			transformer.transform(source, result);
+
+			return sw.toString();
+
+		} catch (TransformerConfigurationException e) {
+			BpelgenPlugin.logError(e, e.getMessage());
+		} catch (TransformerException e) {
+			BpelgenPlugin.logError(e, e.getMessage());
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param machine
+	 */
+	public void init(IMachineRoot machine) {
+		this.machine = machine;
+		XMLtool xml = new XMLtool(true, null);
+		document = xml.getDocument();
+
+		Comment generated = document
+				.createComment("Generated by BPEL Generator plugin");
+		document.appendChild(generated);
+
+		// Process
+		process = document.createElement("process");
+		process.setAttribute("xmlns",
+				"http://docs.oasis-open.org/wsbpel/2.0/process/abstract");
+		process.setAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+		document.appendChild(process);
+
+		// Imports
+		Comment infoc = document
+				.createComment("TODO Auto-generated namespace stub");
+		Element impt = document.createElement("import");
+		impt.setAttribute("importType", "http://schemas.xmlsoap.org/wsdl/");
+		impt.setAttribute("location", machine.getComponentName()
+				.concat(".wsdl"));
+		impt.setAttribute("namespace", "http://localhost");
+		impt.appendChild(infoc);
+		process.appendChild(impt);
+		// Partnerlinks
+		partnerLinks = document.createElement("partnerLinks");
+		Comment info = document
+				.createComment("TODO Auto-generated partnerLink stub");
+		partnerLinks.appendChild(info);
+
+		Element partnerLink = document.createElement("partnerLink");
+		partnerLink.setAttribute("name", "putServiveNameHere");
+		partnerLink.setAttribute("partnerLinkType", "putLinkTypeHere");
+		partnerLink.setAttribute("partnerRole", "service");
+		partnerLinks.appendChild(partnerLink);
+		process.appendChild(partnerLinks);
+
+		createVariables();
+		createActivities();
+	}
+}
