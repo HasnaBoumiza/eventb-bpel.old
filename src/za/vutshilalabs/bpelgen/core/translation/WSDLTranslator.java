@@ -141,9 +141,9 @@ public class WSDLTranslator {
 		XMLtool tool = new XMLtool(false, wsdlFile);
 		document = tool.getDocument();
 		definitions = document.getDocumentElement();
-		String contextName = wsdlFile.getName().replace(
-				EBConstant.WSDL_EXTENSION, "GN").concat(
-				EBConstant.CONTEXT_EXTENSION);
+		String contextName = wsdlFile.getName()
+				.replace(EBConstant.WSDL_EXTENSION, "GN")
+				.concat(EBConstant.CONTEXT_EXTENSION);
 
 		contextFile = RodinHelper.createRodinConstruct(contextName, project);
 		context = contextFile.getRoot();

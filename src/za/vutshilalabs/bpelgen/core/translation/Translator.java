@@ -11,7 +11,6 @@ import org.rodinp.core.IRodinProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import za.vutshilalabs.bpelgen.BpelgenPlugin;
 import za.vutshilalabs.bpelgen.core.EBConstant;
 import za.vutshilalabs.bpelgen.core.RodinHelper;
 import za.vutshilalabs.bpelgen.core.XMLtool;
@@ -28,7 +27,6 @@ public class Translator {
 	 * @param machineFile
 	 */
 	public static void translateEventb(IFile machineFile) {
-		// TODO Auto-generated method stub
 		IProject project = machineFile.getProject();
 
 		if (machineFile.getFileExtension().equals("bcm")) {
@@ -67,9 +65,9 @@ public class Translator {
 			// Create BPEL file
 			IFile bpelFile = project.getFile(machine.getElementName().concat(
 					".bpel"));
-			BPELwriter writer = new BPELwriter();
-			writer.init(machine);
-			writer.createFile(bpelFile);
+			MachineTranslator machineTrans = new MachineTranslator();
+			machineTrans.init(machine);
+			machineTrans.createFile(bpelFile);
 
 			Element seesContext = (Element) root.getElementsByTagName(
 					EBConstant.EVENTB_SEES_CONTEXT).item(0);
@@ -83,14 +81,18 @@ public class Translator {
 					target);
 			IFile wsdlFile = project.getFile(machine.getElementName().concat(
 					".wsdl"));
-			ContextTranslator contextTranslator = new ContextTranslator();
-			contextTranslator.init(machine, context);
-			contextTranslator.createFile(wsdlFile);
-
-		} else {
-			BpelgenPlugin
-					.logError(new Exception("Invalid event-b Machine"),
-							"There seems to be an error in the Machine you are trying to translate");
+			// OldContextTranslator contextTranslator = new OldContextTranslator();
+			// contextTranslator.init(machine, context);
+			// contextTranslator.createFile(wsdlFile);
+			ContextTranslator wsdlW = new ContextTranslator();
+			try {
+				wsdlW.init(context, machine.getElementName());
+				wsdlW.createFile(wsdlFile, null);
+			} catch (Exception e) {
+				System.err.printf("failed creating WSDL file. exception: %s\n",
+						e.getMessage());
+				e.printStackTrace();
+			}
 
 		}
 	}

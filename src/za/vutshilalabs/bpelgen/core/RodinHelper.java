@@ -8,6 +8,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IWorkspaceRunnable;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eventb.core.IAction;
 import org.eventb.core.IAxiom;
 import org.eventb.core.ICarrierSet;
 import org.eventb.core.IConfigurationElement;
@@ -33,6 +34,35 @@ import za.vutshilalabs.bpelgen.core.translation.PredicateString;
  * 
  */
 public class RodinHelper {
+
+	/**
+	 * Create IAction
+	 * 
+	 * @param event
+	 * @param assignment
+	 * @throws RodinDBException
+	 */
+	public static void createAction(final IEvent event, final String assignment)
+			throws RodinDBException {
+		IAction actions[] = event.getActions();
+		int len = actions.length;
+		boolean hasAction = false;
+
+		for (IAction action : actions) {
+			if (action.getAssignmentString().equals(assignment)) {
+				hasAction = true;
+				break;
+			}
+		}
+
+		if (!hasAction) {
+			IAction action = event.getRoot().createChild(IAction.ELEMENT_TYPE,
+					null, null);
+			action.setAssignmentString(assignment, null);
+			action.setLabel("act" + (len + 1), null);
+		}
+
+	}
 
 	/**
 	 * Create Axiom
@@ -120,6 +150,38 @@ public class RodinHelper {
 		}
 	}
 
+	/**
+	 * Create IEvent element
+	 * 
+	 * @param machine
+	 * @param label
+	 * @return
+	 * @throws RodinDBException
+	 */
+	public static IEvent createEvent(final IInternalElement machine,
+			final String label) throws RodinDBException {
+
+		IEvent events[] = ((IMachineRoot) machine).getEvents();
+		boolean hasEvent = false;
+		for (IEvent event : events) {
+			if (event.getLabel().equals(label)) {
+				hasEvent = true;
+				break;
+			}
+		}
+
+		if (!hasEvent) {
+			IEvent event = machine.createChild(IEvent.ELEMENT_TYPE, null, null);
+			event.setLabel(label, null);
+			event.setExtended(false, null);
+			event.setConvergence(IConvergenceElement.Convergence.valueOf(0),
+					null);
+			return event;
+		}
+
+		return null;
+	}
+
 	public static IRodinFile createRodinConstruct(final String filename,
 			final IRodinProject project) throws RodinDBException {
 		if (project == null)
@@ -133,7 +195,7 @@ public class RodinHelper {
 			public void run(IProgressMonitor monitor) throws CoreException {
 				// do not overwrite existing file
 				rodinFile.create(false, monitor);
-				rodinFile.getResource().setDerived(true);
+				rodinFile.getResource().setDerived(true, null);
 
 				final IInternalElement rodinRoot = rodinFile.getRoot();
 				((IConfigurationElement) rodinRoot).setConfiguration(
@@ -191,9 +253,9 @@ public class RodinHelper {
 
 				invariant = machineRoot.createChild(IInvariant.ELEMENT_TYPE,
 						null, null);
-				String predicate = variableName.concat(" ").concat(
-						EBConstant.MATH_ELEMENT).concat(" ").concat(
-						variableType);
+				String predicate = variableName.concat(" ")
+						.concat(EBConstant.MATH_ELEMENT).concat(" ")
+						.concat(variableType);
 				invariant.setPredicateString(predicate, null);
 				invariant.setLabel("inv" + (count + 1), null);
 			}

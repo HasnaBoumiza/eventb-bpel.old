@@ -1,143 +1,207 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?> 
 <?eclipse version="3.4"?>
 <plugin>
-	<!-- menus and toolbar -->
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <commonFilter
+            activeByDefault="true"
+            class="za.vutshilalabs.bpelgen.navigator.NonWebServices"
+            id="za.vutshilalabs.bws.filters.nonWS"
+            name="All non Web Service files"
+            visibleInUI="true">
+      </commonFilter>
+      <commonFilter
+            activeByDefault="true"
+            class="za.vutshilalabs.bpelgen.navigator.NonRODIN"
+            id="za.vutshilalabs.bws.filters.nonRodin"
+            name="All non RODIN projects"
+            visibleInUI="true">
+      </commonFilter>
+   </extension> 
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            id="za.vutshilalabs.bws.popupMenus"
+            objectClass="org.eclipse.core.resources.IFile">
+         <menu
+               id="za.vutshilalabs.bws.menus"
+               label="Service Generator"
+               path="additions">
+            <separator
+                  name="bws">
+            </separator>
+         </menu>
+         <action
+               class="za.vutshilalabs.bpelgen.popup.actions.GenerateAction"
+               enablesFor="1"
+               id="za.vutshilalabs.bws.generateAction"
+               label="Generate Service"
+               menubarPath="za.vutshilalabs.bws.menus/bws">
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.bum">
+            </selection>
+         </action>
+         <action
+               class="za.vutshilalabs.bpelgen.popup.actions.UpdateAction"
+               id="za.vutshilalabs.bws.updateAction"
+               label="Update Event-B"
+               menubarPath="za.vutshilalabs.bws.menus/bws">
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.wsdl">
+            </selection>
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.bpel">
+            </selection>
+         </action>
+         <action
+               class="za.vutshilalabs.bpelgen.popup.actions.ValidateAction"
+               id="za.vutshilalabs.bws.validateAction"
+               label="Validate"
+               menubarPath="za.vutshilalabs.bws.menus/bws">
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.wsdl">
+            </selection>
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.bpel">
+            </selection>
+         </action>
+      </objectContribution>
+      <objectContribution
+            adaptable="false"
+            id="za.vutshilalabs.bws.popupMenus"
+            objectClass="org.eventb.core.IMachineRoot">
+            <menu
+               id="za.vutshilalabs.bws.menus"
+               label="Service Generator"
+               path="additions">
+            <separator
+                  name="bws">
+            </separator>
+         </menu>
+         <action
+               class="za.vutshilalabs.bpelgen.popup.actions.GenerateAction"
+               enablesFor="1"
+               id="za.vutshilalabs.bws.generateAction"
+               label="Generate Service"
+               menubarPath="za.vutshilalabs.bws.menus/bws">
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="za.vutshilalabs.bpelgen.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="za.vutshilalabs.bpelgen.preferences.PreferencesPage"
+            id="za.vutshilalabs.bws.preferences"
+            name="Service Generator">
+      </page>
+   </extension>
+<extension
+         point="org.eclipse.ui.views">
+      <view
+            class="org.eclipse.ui.navigator.CommonNavigator"
+            icon="icons/sample.gif"
+            id="za.vutshilalabs.bws.view"
+            name="Service Generator">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.viewer">
+      <viewerActionBinding
+            viewerId="za.vutshilalabs.bws.view">
+         <includes>
+            <actionExtension
+                  pattern="org.eclipse.ui.navigator.resources.*">
+            </actionExtension>
+         </includes>
+      </viewerActionBinding>
+      <viewerContentBinding
+            viewerId="za.vutshilalabs.bws.view">
+         <includes>
+           <contentExtension
+                  pattern="org.eclipse.ui.navigator.resourceContent">
+            </contentExtension>
+           <contentExtension
+                 pattern="org.eclipse.ui.navigator.resources.filters.*">
+           </contentExtension>
+           <contentExtension
+                 pattern="za.vutshilalabs.bws.filters.*">
+           </contentExtension>
+         </includes>
+      </viewerContentBinding>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eventb.ui.perspective.eventb">
+         <view
+               id="za.vutshilalabs.bws.view"
+               minimized="false"
+               ratio="0.50"
+               relationship="bottom"
+               relative="fr.systerel.explorer.navigator.view">
+         </view>
+      </perspectiveExtension>
+   </extension>
    <extension
          point="org.eclipse.ui.actionSets">
       <actionSet
-            label="%actionSet.label"
-            visible="true"
-            id="vutshila.labs.bpelgen.actionSet">
+            id="za.vutshilalabs.bws.actionSet"
+            label="BWS Action Set"
+            visible="true">
          <menu
-               label="%menu.label"
-               id="bpelgenMenu">
+               id="za.vutshilalabs.bws.menus"
+               label="Service Generator">
             <separator
-                  name="bpelgenGroup">
+                  name="bws">
             </separator>
          </menu>
          <action
-               class="za.vutshilalabs.bpelgen.ui.actions.Translate"
-               icon="icons/translate.png"
-               id="vutshila.labs.bpelgen.actions.Translate"
-               label="%action.label"
-               menubarPath="bpelgenMenu/bpelgenGroup"
-               toolbarPath="bpelgenGroup"
-               tooltip="%action.tooltip" enablesFor="+">
-               <selection class="org.eventb.core.basis.MachineRoot" />
-               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
-               <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
+               class="za.vutshilalabs.bpelgen.actions.Generate"
+               enablesFor="1"
+               icon="icons/sample.gif"
+               id="za.vutshilalabs.bws.actions.Generate"
+               label="&amp;Generate Service"
+               menubarPath="za.vutshilalabs.bws.menus/bws"
+               toolbarPath="bws"
+               tooltip="Generate Web Service">
+            <selection
+                  class="org.eventb.core.IMachineRoot">
+            </selection>
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.bum">
+            </selection>
          </action>
-          <action
-                class="za.vutshilalabs.bpelgen.ui.actions.Update"
-                enablesFor="+"
-                id="vutshila.labs.bpelgen.actions.Update"
-                label="%action.label.0"
-                menubarPath="bpelgenMenu/bpelgenGroup"
-                tooltip="%action.tooltip.0">
-                
-                <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
+         <action
+               class="za.vutshilalabs.bpelgen.actions.Update"
+               enablesFor="1"
+               id="za.vutshilalabs.bws.actions.Update"
+               label="&amp;Update Event-B"
+               menubarPath="za.vutshilalabs.bws.menus/bws"
+               style="push"
+               tooltip="Update Event-B models">
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.wsdl">
+            </selection>
+            <selection
+                  class="org.eclipse.core.resources.IFile"
+                  name="*.bpel">
+            </selection>
          </action>
       </actionSet>
    </extension>
-   
-   <!-- popup menus -->
-     <extension
-         point="org.eclipse.ui.popupMenus">
-        <!-- Event-B perspective-->
-      <objectContribution
-            id="vutshila.labs.bpelgen.contribution"
-             objectClass="org.eventb.core.basis.MachineRoot">
-         <menu
-               id="vutshila.labs.bpelgen.menu"
-               label="%menu.label.0"
-               path="additions">
-            <separator
-                  name="group1">
-            </separator>
-         </menu>
-         <action
-               class="za.vutshilalabs.bpelgen.ui.popup.actions.Translate"
-               enablesFor="+"
-               id="vutshila.labs.bpelgen.translate"
-               label="%action.label.1"
-               menubarPath="vutshila.labs.bpelgen.menu/group1">
-               <selection class="org.eventb.core.basis.MachineRoot" />
-               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
-         </action>
-      </objectContribution>
-      
-      <!-- this for IFile in other perspectives-->
-      <objectContribution
-            id="vutshila.labs.bpelgen.contribution"
-             objectClass="org.eclipse.core.resources.IFile">
-         <menu
-               id="vutshila.labs.bpelgen.menu"
-               label="%menu.label.1"
-               path="additions">
-            <separator
-                  name="group1">
-            </separator>
-         </menu>
-         <action
-               class="za.vutshilalabs.bpelgen.ui.popup.actions.Update"
-               enablesFor="+"
-               id="vutshila.labs.bpelgen.update"
-               label="%action.label.2"
-               menubarPath="vutshila.labs.bpelgen.menu/group1">
-			   <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
-         </action>
-          <action
-               class="za.vutshilalabs.bpelgen.ui.popup.actions.Translate"
-               enablesFor="+"
-               id="vutshila.labs.bpelgen.translate"
-               label="%action.label.3"
-               menubarPath="vutshila.labs.bpelgen.menu/group1">
-               <selection class="org.eclipse.core.resources.IFile" name="*.bcm" />
-               <selection class="org.eclipse.core.resources.IFile" name="*.bum" />
-         </action>
-         <action
-               class="za.vutshilalabs.bpelgen.ui.popup.actions.CheckXML"
-               enablesFor="1"
-               id="vutshila.labs.bpelgen.checkXML"
-               label="%action.label.4"
-               menubarPath="vutshila.labs.bpelgen.menu/group1">
-               
-               <selection class="org.eclipse.core.resources.IFile" name="*.bpel" />
-               <selection class="org.eclipse.core.resources.IFile" name="*.wsdl" />
-         </action>
-      </objectContribution>
-   </extension>
-   
-   <!-- XML editor -->
-   <extension
-         point="org.eclipse.ui.editors">
-      <editor
-            class="za.vutshilalabs.bpelgen.ui.editors.XMLEditor"
-            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor"
-            extensions="wsdl, bpel"
-            id="vutshila.labs.bpelgen.editors.XMLEditor"
-            name="%editor.name">
-      </editor>
-   </extension>
-   <extension
-         point="org.eclipse.ui.navigator.navigatorContent">
-      <navigatorContent
-            contentProvider="za.vutshilalabs.bpelgen.ui.BpelgenContent"
-            id="eventb-bpel.bpelgenContent"
-            labelProvider="za.vutshilalabs.bpelgen.ui.BpelgenLabelProvider"
-            name="BPEL Generator Files"
-            priority="lower">
-         <triggerPoints>
-            <instanceof
-                  value="org.rodinp.core.IRodinProject">
-            </instanceof>
-         </triggerPoints>
-         <possibleChildren>
-            <instanceof
-                  value="org.eclipse.core.resources.IFile">
-            </instanceof>
-         </possibleChildren>
-      </navigatorContent>
-   </extension>
+ 
 
 </plugin>

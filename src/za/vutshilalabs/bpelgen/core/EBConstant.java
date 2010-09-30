@@ -37,4 +37,9 @@ public interface EBConstant {
 	final String MATH_ARROW = "\u2192";
 	final String CONFIGURATION = "org.eventb.core.fwd";
 	final String PERIOD = ".";
+	final String COLON_EQUALS = "\u2254";
+
+	// Bpel default namespaces
+	final String targetNS = "http://www.example.com/";
+	final String xmlns = "http://docs.oasis-open.org/wsbpel/2.0/process/executable";
 }

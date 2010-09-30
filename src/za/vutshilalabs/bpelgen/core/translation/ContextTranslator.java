@@ -1,8 +1,24 @@
-/**
- *
- */
 package za.vutshilalabs.bpelgen.core.translation;
 
+import java.io.IOException;
+import java.util.HashMap;
+
+import javax.wsdl.Binding;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.Definition;
+import javax.wsdl.Input;
+import javax.wsdl.Message;
+import javax.wsdl.Operation;
+import javax.wsdl.Output;
+import javax.wsdl.Part;
+import javax.wsdl.Port;
+import javax.wsdl.PortType;
+import javax.wsdl.Service;
+import javax.wsdl.Types;
+import javax.wsdl.WSDLException;
+import javax.wsdl.factory.WSDLFactory;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -12,82 +28,361 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eventb.core.IAxiom;
 import org.eventb.core.ICarrierSet;
 import org.eventb.core.IContextRoot;
-import org.eventb.core.IMachineRoot;
-import org.rodinp.core.RodinDBException;
-import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+import za.vutshilalabs.bpelgen.Activator;
 import za.vutshilalabs.bpelgen.core.EBConstant;
-import za.vutshilalabs.bpelgen.core.XMLtool;
+import za.vutshilalabs.bpelgen.preferences.PreferenceConstants;
 
 /**
- * @author Ernest Mashele<mashern@tuks.co.za>
+ * Create WSDL file from Event-B context
+ * 
+ * @author mashern
  * 
  */
 public class ContextTranslator {
+	private static final String ADDRESS = "address";
+	private static final String BINDING = "binding";
+	private static final String COMPLEX_TYPE = "complexType";
+	private static final String DOCUMENT = "document";
+	private static final String ELEMENT = "element";
+	private static final String INPUT = "input";
+	private static final String LITERAL = "literal";
+	private static final String LOCATION = "location";
+	private static final String NAME = "name";
+	private static final String OPERATION = "operation";
+	private static final String OUTPUT = "output";
+	private static final String PORT = "port";
+	private static final String PORT_TYPE_SUFFIX = "PT";
+	private static final String SEQUENCE = "sequence";
+	private static final String SERVICE_SUFFIX = "Service";
+	private static final String SOAP = "SOAP";
+	private static final String SOAP_ACTION = "soapAction";
+	private static final String SOAP_BODY = "body";
+	private static final String SOAP_HTTP = "http://schemas.xmlsoap.org/soap/http";
+	private static final String SOAP_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
+	private static final String STYLE = "style";
+	private static final String TARGET_NS = "targetNamespace";
+	private static final String TRANSPORT = "transport";
+	private static final String TYPES = "types";
+	private static final String USE = "use";
+	private static final String XML_SCHEMA = "schema";
+	private static final String XSD_ANY_TYPE = "xs:anyType";
+	private static final String XSD_TYPE = "type";
 
 	private IContextRoot context;
-	private Document document;
-	private Element definitions;
-	private Element portType;
+	private Definition def;
+	private WSDLFactory factory;
+	private HashMap<String, Message> messages;
+	private String namespace;
+	private String prefix;
+	private String url;
+
+	/**
+	 * 
+	 * @param source
+	 * @param suffix
+	 * @return
+	 */
+	private String addSuffix(String source, final String suffix) {
+		return source.endsWith(suffix) ? source : source.concat(suffix);
+	}
+
+	/**
+	 * Create ADDRESS binding element
+	 * 
+	 * @throws WSDLException
+	 */
+	@SuppressWarnings("unchecked")
+	private void createBinding(String serviceName) throws WSDLException {
+
+		if (def.getPortTypes().isEmpty())
+			return;
+		// Assuming 1 PortType exits
+		Binding binding = def.createBinding();
+		PortType portType = def.getPortType(new QName(namespace, addSuffix(
+				serviceName, PORT_TYPE_SUFFIX)));
+		binding.setPortType(portType);
+		binding.setQName(new QName(namespace, addSuffix(serviceName, SOAP)));
+		Operation operations[] = new Operation[portType.getOperations().size()];
+		operations = (Operation[]) portType.getOperations().toArray(operations);
+
+		for (Operation op : operations) {
+			BindingOperation bOperation = def.createBindingOperation();
+			bOperation.setOperation(op);
+			bOperation.setName(op.getName());
+			binding.addBindingOperation(bOperation);
+		}
+
+		binding.setUndefined(false);
+		def.addBinding(binding);
+
+		Service service = def.createService();
+		service.setQName(new QName(serviceName, addSuffix(serviceName,
+				SERVICE_SUFFIX)));
+
+		Port port = def.createPort();
+		port.setBinding(binding);
+		port.setName(addSuffix(serviceName, SOAP));
+		service.addPort(port);
+		def.addService(service);
+
+		// fill missing elements using DOM
+
+		// Service address
+		Document doc = factory.newWSDLWriter().getDocument(def);
+		Element definitions = doc.getDocumentElement();
+		String wsdlNS = definitions.getNamespaceURI();
+		Element servicePort = (Element) definitions.getElementsByTagNameNS(
+				wsdlNS, PORT).item(0);
+		Element soapAddress = doc.createElementNS(SOAP_NS, ADDRESS);
+		soapAddress.setAttribute(LOCATION, url);
+		servicePort.appendChild(soapAddress);
+
+		// binding
+		Element dBinding = (Element) definitions.getElementsByTagNameNS(wsdlNS,
+				BINDING).item(0);
+		Element soapBinding = doc.createElementNS(SOAP_NS, BINDING);
+		soapBinding.setAttribute(STYLE, DOCUMENT);
+		soapBinding.setAttribute(TRANSPORT, SOAP_HTTP);
+		dBinding.appendChild(soapBinding);
+		// binding/operation
+
+		NodeList bindingOperations = dBinding.getElementsByTagNameNS(wsdlNS,
+				OPERATION);
+
+		for (int i = 0; i < bindingOperations.getLength(); i++) {
+			Element bOperation = (Element) bindingOperations.item(i);
+			Element soapOperation = doc.createElementNS(SOAP_NS, OPERATION);
+			String name = bOperation.getAttribute(NAME);
+			soapOperation.setAttribute(SOAP_ACTION, namespace.concat(name));
+			bOperation.appendChild(soapOperation);
+
+			Element input = doc.createElementNS(wsdlNS, INPUT);
+			Element output = doc.createElementNS(wsdlNS, OUTPUT);
+
+			Element soapBody = doc.createElementNS(SOAP_NS, SOAP_BODY);
+			soapBody.setAttribute(USE, LITERAL);
+
+			Element soapBody1 = doc.createElementNS(SOAP_NS, SOAP_BODY);
+			soapBody1.setAttribute(USE, LITERAL);
+
+			input.appendChild(soapBody1);
+			output.appendChild(soapBody);
+
+			bOperation.appendChild(input);
+			bOperation.appendChild(output);
+		}
+		// Update definitions
+		def = factory.newWSDLReader().readWSDL(serviceName, doc);
+	}
 
 	/**
 	 * 
 	 * @param serviceName
 	 */
-	private void createDefinitions(String serviceName) {
-
-		definitions = document.createElement("definitions");
-		definitions.setAttribute("name", serviceName);
-		// Todo targetNamespace should point to the file's address
-		definitions.setAttribute("targetNamespace", "http://localhost");
-		// default namespace
-		definitions.setAttribute("xmlns", "http://schemas.xmlsoap.org/wsdl/");
-		definitions.setAttribute("xmlns:soap",
-				"http://schemas.xmlsoap.org/wsdl/soap/");
-		definitions
-				.setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
-		// Todo add xsd file's namespace
-		Comment stub = document
-				.createComment("TODO Auto-generated targetNamespace stub");
-		definitions.appendChild(stub);
-		document.appendChild(definitions);
+	private void createDefinition(final String serviceName) {
+		def = factory.newDefinition();
+		def.setQName(new QName(namespace, serviceName));
+		def.setTargetNamespace(namespace);
+		def.addNamespace("soap", SOAP_NS);
+		def.addNamespace("xs", XMLConstants.W3C_XML_SCHEMA_NS_URI);
+		def.addNamespace(prefix, namespace);
 	}
 
 	/**
-	 * Creates xsd types corresponding to Event-B build-in types. All sets
-	 * ending with Type are considered an a xsd ComplexType
+	 * 
+	 * @param wsdl
+	 * @throws IOException
+	 * @throws WSDLException
+	 * @throws CoreException
 	 */
-	private boolean createElements(final String servName) {
-		Comment generated = document.createComment(EBConstant.GENERATED);
-		document.appendChild(generated);
-		createDefinitions(servName.concat("_Service"));
+	public void createFile(IFile wsdl, IProgressMonitor monitor) throws IOException, CoreException, WSDLException {
 
-		Element types = document.createElement("types");
-		Element schema = document.createElement("xs:schema");
-		types.appendChild(schema);
-		definitions.appendChild(types);
+		TransformerFactory tFactory;
+		Source source;
+		Transformer transformer;
+		Result result;
+		try {
+			Document doc = createTypes();
+			tFactory = TransformerFactory.newInstance();
+			transformer = tFactory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			source = new DOMSource(doc);
+			result = new StreamResult(wsdl.getLocation().toFile());
+			// result = new StreamResult(System.out);
+			transformer.transform(source, result);
+			wsdl.refreshLocal(IResource.DEPTH_ZERO, monitor);
+		} catch (Exception ex) {
+			System.err.printf("failed creating file, exception: %s",
+					ex.getMessage());
+		}
 
+	}
+
+	/**
+	 * Create Messages
+	 */
+	private void createMessages() {
 		ICarrierSet[] sets;
 		IAxiom[] axioms;
 
-		boolean noErrors = true;
 		try {
-			sets = context.getCarrierSets();
 			axioms = context.getAxioms();
+			sets = context.getCarrierSets();
+
+			Types types = def.createTypes();
+			def.setTypes(types);
 
 			for (ICarrierSet set : sets) {
 				String setName = set.getIdentifierString();
 
 				if (setName.endsWith(EBConstant.TYPE)) {
-					// Types
-					Element complexType = document
-							.createElement("xs:ComplexType");
-					complexType.setAttribute("name", setName);
+
+				} else if (setName.endsWith(EBConstant.MESSAGE)) {
+					Message message = def.createMessage();
+					message.setQName(new QName(namespace, setName));
+
+					for (IAxiom axiom : axioms) {
+						PredicateString ps = new PredicateString();
+						if (ps.createPredicate(axiom.getPredicateString())) {
+							// Part with element tag
+							if (ps.getInput().equals(setName)
+									&& ps.getOutput().endsWith(EBConstant.TYPE)) {
+
+								Part part = def.createPart();
+								part.setName(ps.getOperation());
+								part.setElementName(new QName(namespace, ps
+										.getOutput()));
+								message.addPart(part);
+							} else if (ps.getInput().equals(setName)) {
+								// Part with type tag
+								String output = ps.getOutput();
+								String type = "";
+								// Check element if primitive Event-B types
+								boolean premitive = false;
+								for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
+									if (output
+											.equals(EBConstant.EVENTB_TYPES[i])) {
+										premitive = true;
+										type = EBConstant.XSD_TYPES[i];
+										break;
+									}
+								}
+
+								if (premitive) {
+									Part part = def.createPart();
+									part.setName(ps.getOperation());
+									part.setTypeName(new QName(
+											XMLConstants.W3C_XML_SCHEMA_NS_URI,
+											type));
+									message.addPart(part);
+								}
+
+							}
+						}
+					}
+
+					message.setUndefined(false);
+					def.addMessage(message);
+					messages.put(setName, message);
+				}
+			}
+
+		} catch (Exception ex) {
+			System.err.printf(
+					"failed loading Context elements. exception: %s\n",
+					ex.getMessage());
+			ex.printStackTrace();
+		}
+	}
+
+	/**
+	 * Create PortType
+	 * 
+	 * @param serviceName
+	 */
+	private void createPortType(final String serviceName) {
+		// PortType operation
+		PortType portType = def.createPortType();
+		portType.setQName(new QName(namespace, addSuffix(serviceName,
+				PORT_TYPE_SUFFIX)));
+		try {
+			IAxiom axioms[] = context.getAxioms();
+			for (IAxiom axiom : axioms) {
+				PredicateString ps = new PredicateString();
+				if (ps.createPredicate(axiom.getPredicateString())) {
+					if (ps.getInput().endsWith(EBConstant.MESSAGE)
+							&& ps.getOutput().endsWith(EBConstant.MESSAGE)) {
+
+						Operation operation = def.createOperation();
+						operation.setName(ps.getOperation());
+
+						Input input = def.createInput();
+						Message inMessage = messages.get(ps.getInput());
+						input.setMessage(inMessage);
+						operation.setInput(input);
+
+						Output output = def.createOutput();
+						Message outMessage = messages.get(ps.getOutput());
+						output.setMessage(outMessage);
+						operation.setOutput(output);
+
+						operation.setUndefined(false);
+						portType.addOperation(operation);
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.printf("failed loading Axioms, exception: %s\n",
+					e.getMessage());
+		} finally {
+			portType.setUndefined(false);
+			def.addPortType(portType);
+		}
+	}
+
+	private Document createTypes() throws WSDLException {
+		ICarrierSet[] sets;
+		IAxiom[] axioms;
+		Document doc = factory.newWSDLWriter().getDocument(def);
+		Element defElement = doc.getDocumentElement();
+		String wsdlNS = defElement.getNamespaceURI();
+		Element typesElement = (Element) defElement.getElementsByTagNameNS(
+				wsdlNS, TYPES).item(0);
+
+		Element schemaElement = doc.createElementNS(
+				XMLConstants.W3C_XML_SCHEMA_NS_URI, XML_SCHEMA);
+		schemaElement.setAttribute(TARGET_NS, namespace);
+
+		try {
+			axioms = context.getAxioms();
+			sets = context.getCarrierSets();
+
+			Types types = def.createTypes();
+			def.setTypes(types);
+
+			for (ICarrierSet set : sets) {
+				String setName = set.getIdentifierString();
+
+				if (setName.endsWith(EBConstant.TYPE)) {
+					Element element = doc.createElementNS(
+							XMLConstants.W3C_XML_SCHEMA_NS_URI, ELEMENT);
+					element.setAttribute(NAME, setName);
+					Element complexType = doc.createElementNS(
+							XMLConstants.W3C_XML_SCHEMA_NS_URI, COMPLEX_TYPE);
+					Element sequence = doc.createElementNS(
+							XMLConstants.W3C_XML_SCHEMA_NS_URI, SEQUENCE);
+
 					int elementCount = 0;
 
 					for (IAxiom axiom : axioms) {
@@ -104,116 +399,55 @@ public class ContextTranslator {
 										break;
 									}
 								}
-								if (type.equals(""))
-									noErrors = false;
-
-								Element element = document
-										.createElement("xs:element");
-								element.setAttribute("name", ps.getOperation());
-								element.setAttribute("type", type);
-								complexType.appendChild(element);
+								type = type.equals("") ? XSD_ANY_TYPE : type;
+								Element internalElement = doc.createElementNS(
+										XMLConstants.W3C_XML_SCHEMA_NS_URI,
+										ELEMENT);
+								internalElement.setAttribute(NAME,
+										ps.getOperation());
+								internalElement.setAttribute(XSD_TYPE, type);
+								sequence.appendChild(internalElement);
 							}
-						} else {
-							noErrors = false;
 						}
 					}
-					if (elementCount > 0) {
-						schema.appendChild(complexType);
-					}
-
-				} else if (setName.endsWith(EBConstant.MESSAGE)) {
-					// Messages
-					Element message = document.createElement("message");
-					message.setAttribute("name", setName);
-					for (IAxiom axiom : axioms) {
-						PredicateString ps = new PredicateString();
-						if (ps.createPredicate(axiom.getPredicateString())) {
-							if (ps.getInput().equals(setName)
-									&& ps.getOutput().endsWith(EBConstant.TYPE)) {
-
-								Element part = document.createElement("part");
-								part.setAttribute("name", ps.getOperation());
-								part.setAttribute("type", ps.getOutput());
-								message.appendChild(part);
-							}
-						} else {
-							noErrors = false;
-						}
-					}
-					definitions.appendChild(message);
-				} else {
-					noErrors = false;
+					complexType.appendChild(sequence);
+					element.appendChild(complexType);
+					schemaElement.appendChild(element);
 				}
 			}
 
-			portType = document.createElement("portType");
-			portType.setAttribute("name", servName.concat("_PortType"));
-
-			// Operations
-			for (IAxiom axiom : axioms) {
-				PredicateString ps = new PredicateString();
-				if (ps.createPredicate(axiom.getPredicateString())) {
-					if (ps.getInput().endsWith(EBConstant.MESSAGE)
-							&& ps.getOutput().endsWith(EBConstant.MESSAGE)) {
-
-						Element operation = document.createElement("operation");
-						operation.setAttribute("name", ps.getOperation());
-						Element input = document.createElement("input");
-						input.setAttribute("message", ps.getInput());
-						operation.appendChild(input);
-						Element output = document.createElement("output");
-						output.setAttribute("message", ps.getOutput());
-						operation.appendChild(output);
-						portType.appendChild(operation);
-					}
-				} else {
-					noErrors = false;
-				}
-			}
-
-			definitions.appendChild(portType);
-
-		} catch (RodinDBException e) {
-			System.err.printf("failed loading context file: %s, exception: %s",
-					context.getElementName(), e.getMessage());
-			return false;
+			typesElement.appendChild(schemaElement);
+			return doc;
+		} catch (Exception e) {
+			System.err.printf("failed creating WSDL types, exception: %s\n",
+					e.getMessage());
+			e.printStackTrace();
+			return doc;
 		}
-		return noErrors;
 	}
 
 	/**
-	 * Write WSDL data to file
+	 * Initialise
 	 * 
-	 * @param file
+	 * @param context
+	 * @param machineName
+	 * @throws WSDLException
 	 */
-	public void createFile(IFile file) {
-		TransformerFactory factory;
-		Source source;
-		Transformer transformer;
-		Result result;
-		try {
-			factory = TransformerFactory.newInstance();
-			transformer = factory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			source = new DOMSource(document);
-			result = new StreamResult(file.getLocation().toFile());
-			// result = new StreamResult(System.out);
-			transformer.transform(source, result);
-			file.refreshLocal(0, null);
-
-		} catch (Exception ex) {
-			System.err.printf("failed creating file, exception: %s", ex
-					.getMessage());
-		}
-
-	}
-
-	public void init(IMachineRoot machine, IContextRoot context) {
-
-		XMLtool xml = new XMLtool(true, null);
-		document = xml.getDocument();
+	public void init(IContextRoot context, final String machineName)
+			throws WSDLException {
 		this.context = context;
-		createElements(machine.getElementName());
+		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
+		prefix = store.getString(PreferenceConstants.WSDL_NS_PREFIX);
+		namespace = store.getString(PreferenceConstants.TNS_WS).concat("/")
+				.concat(machineName).concat("/");
+		url = store.getString(PreferenceConstants.TNS_WS);
 
+		messages = new HashMap<String, Message>(0);
+
+		factory = WSDLFactory.newInstance();
+		createDefinition(machineName);
+		createMessages();
+		createPortType(machineName);
+		createBinding(machineName);
 	}
 }

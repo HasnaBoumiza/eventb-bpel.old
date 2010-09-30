@@ -27,7 +27,7 @@ import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import za.vutshilalabs.bpelgen.BpelgenPlugin;
+import za.vutshilalabs.bpelgen.Activator;
 import za.vutshilalabs.bpelgen.core.XMLtool;
 
 /**
@@ -69,8 +69,8 @@ public class BPELwriter {
 					// Getting all parameters
 					IParameter[] params = event.getParameters();
 					for (IParameter param : params) {
-						invoke.setAttribute("inputVariable", param
-								.getIdentifierString());
+						invoke.setAttribute("inputVariable",
+								param.getIdentifierString());
 					}
 
 					process.appendChild(invoke);
@@ -78,7 +78,7 @@ public class BPELwriter {
 			}
 		} catch (RodinDBException e) {
 			// TODO Auto-generated catch block
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		}
 	}
 
@@ -97,9 +97,9 @@ public class BPELwriter {
 			file.refreshLocal(0, null);
 
 		} catch (TransformerConfigurationException e) {
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		} catch (TransformerException e) {
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -138,7 +138,7 @@ public class BPELwriter {
 			}
 		} catch (RodinDBException e) {
 			e.printStackTrace();
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		}
 
 		process.appendChild(variables);
@@ -167,9 +167,9 @@ public class BPELwriter {
 			return sw.toString();
 
 		} catch (TransformerConfigurationException e) {
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		} catch (TransformerException e) {
-			BpelgenPlugin.logError(e, e.getMessage());
+			Activator.logError(e, e.getMessage());
 		}
 		return null;
 	}

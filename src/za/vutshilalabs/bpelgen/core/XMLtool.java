@@ -10,7 +10,7 @@ import org.eclipse.core.resources.IFile;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import za.vutshilalabs.bpelgen.BpelgenPlugin;
+import za.vutshilalabs.bpelgen.Activator;
 
 /**
  * 
@@ -46,7 +46,7 @@ public class XMLtool {
 				doc = builder.newDocument();
 
 			} catch (ParserConfigurationException e) {
-				BpelgenPlugin.logError(e, e.getMessage());
+				Activator.logError(e, e.getMessage());
 			}
 		}
 
@@ -59,11 +59,11 @@ public class XMLtool {
 				doc = builder.parse(file.getLocation().toFile());
 				doc.getDocumentElement().normalize();
 			} catch (ParserConfigurationException e) {
-				BpelgenPlugin.logError(e, e.getMessage());
+				Activator.logError(e, e.getMessage());
 			} catch (SAXException e) {
-				BpelgenPlugin.logError(e, e.getMessage());
+				Activator.logError(e, e.getMessage());
 			} catch (IOException e) {
-				BpelgenPlugin.logError(e, e.getMessage());
+				Activator.logError(e, e.getMessage());
 			}
 
 		}
