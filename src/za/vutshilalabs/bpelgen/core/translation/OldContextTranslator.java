@@ -21,7 +21,7 @@ import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 import za.vutshilalabs.bpelgen.core.XMLtool;
 
 /**
@@ -31,8 +31,8 @@ import za.vutshilalabs.bpelgen.core.XMLtool;
 public class OldContextTranslator {
 
 	private IContextRoot context;
-	private Document document;
 	private Element definitions;
+	private Document document;
 	private Element portType;
 
 	/**
@@ -63,7 +63,7 @@ public class OldContextTranslator {
 	 * ending with Type are considered an a xsd ComplexType
 	 */
 	private boolean createElements(final String servName) {
-		Comment generated = document.createComment(EBConstant.GENERATED);
+		Comment generated = document.createComment(IGlobalConstants.GENERATED);
 		document.appendChild(generated);
 		createDefinitions(servName.concat("_Service"));
 
@@ -83,7 +83,7 @@ public class OldContextTranslator {
 			for (ICarrierSet set : sets) {
 				String setName = set.getIdentifierString();
 
-				if (setName.endsWith(EBConstant.TYPE)) {
+				if (setName.endsWith(IGlobalConstants.TYPE)) {
 					// Types
 					Element complexType = document
 							.createElement("xs:ComplexType");
@@ -97,10 +97,10 @@ public class OldContextTranslator {
 								elementCount++;
 								// Testing xsd types
 								String type = "";
-								for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
-									if (EBConstant.EVENTB_TYPES[i].equals(ps
+								for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
+									if (IGlobalConstants.EVENTB_TYPES[i].equals(ps
 											.getOutput())) {
-										type = EBConstant.XSD_TYPES[i];
+										type = IGlobalConstants.XSD_TYPES[i];
 										break;
 									}
 								}
@@ -121,7 +121,7 @@ public class OldContextTranslator {
 						schema.appendChild(complexType);
 					}
 
-				} else if (setName.endsWith(EBConstant.MESSAGE)) {
+				} else if (setName.endsWith(IGlobalConstants.MESSAGE)) {
 					// Messages
 					Element message = document.createElement("message");
 					message.setAttribute("name", setName);
@@ -129,7 +129,7 @@ public class OldContextTranslator {
 						PredicateString ps = new PredicateString();
 						if (ps.createPredicate(axiom.getPredicateString())) {
 							if (ps.getInput().equals(setName)
-									&& ps.getOutput().endsWith(EBConstant.TYPE)) {
+									&& ps.getOutput().endsWith(IGlobalConstants.TYPE)) {
 
 								Element part = document.createElement("part");
 								part.setAttribute("name", ps.getOperation());
@@ -153,8 +153,8 @@ public class OldContextTranslator {
 			for (IAxiom axiom : axioms) {
 				PredicateString ps = new PredicateString();
 				if (ps.createPredicate(axiom.getPredicateString())) {
-					if (ps.getInput().endsWith(EBConstant.MESSAGE)
-							&& ps.getOutput().endsWith(EBConstant.MESSAGE)) {
+					if (ps.getInput().endsWith(IGlobalConstants.MESSAGE)
+							&& ps.getOutput().endsWith(IGlobalConstants.MESSAGE)) {
 
 						Element operation = document.createElement("operation");
 						operation.setAttribute("name", ps.getOperation());

@@ -9,7 +9,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 import za.vutshilalabs.bpelgen.core.RodinHelper;
 import za.vutshilalabs.bpelgen.core.XMLtool;
 
@@ -21,8 +21,8 @@ import za.vutshilalabs.bpelgen.core.XMLtool;
 
 public class BPELTranslator {
 	private Document document;
-	private Element process;
 	private IInternalElement machine;
+	private Element process;
 
 	private void createInvokes() throws RodinDBException {
 		NodeList invokes = process.getElementsByTagName("invoke");
@@ -79,9 +79,9 @@ public class BPELTranslator {
 
 			if (variableType.isEmpty() || variableType.equals(null)) {
 				variableType = variable.getAttribute("type");
-				for (int k = 0; k < EBConstant.XSD_TYPES.length; k++) {
-					if (variableType.equals(EBConstant.XSD_TYPES[k])) {
-						variableType = EBConstant.EVENTB_TYPES[k];
+				for (int k = 0; k < IGlobalConstants.XSD_TYPES.length; k++) {
+					if (variableType.equals(IGlobalConstants.XSD_TYPES[k])) {
+						variableType = IGlobalConstants.EVENTB_TYPES[k];
 						break;
 					}
 				}
@@ -106,8 +106,8 @@ public class BPELTranslator {
 		String filename = bpelFile.getName();
 		// TODO check generated file's name
 		String machineName = filename
-				.substring(0, filename.indexOf(EBConstant.PERIOD)).concat("GN")
-				.concat(EBConstant.MACHINE_EXTENSION);
+				.substring(0, filename.indexOf(IGlobalConstants.PERIOD)).concat("GN")
+				.concat(IGlobalConstants.MACHINE_EXTENSION);
 
 		IRodinFile machineFile = RodinHelper.createRodinConstruct(machineName,
 				project);

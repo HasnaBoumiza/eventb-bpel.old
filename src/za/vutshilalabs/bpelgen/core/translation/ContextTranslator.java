@@ -40,13 +40,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import za.vutshilalabs.bpelgen.Activator;
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 import za.vutshilalabs.bpelgen.preferences.PreferenceConstants;
 
 /**
  * Create WSDL file from Event-B context
  * 
- * @author mashern
+ * @author Ernest Mashele<mashern@tuks.co.za>
  * 
  */
 public class ContextTranslator {
@@ -246,9 +246,9 @@ public class ContextTranslator {
 			for (ICarrierSet set : sets) {
 				String setName = set.getIdentifierString();
 
-				if (setName.endsWith(EBConstant.TYPE)) {
+				if (setName.endsWith(IGlobalConstants.TYPE)) {
 
-				} else if (setName.endsWith(EBConstant.MESSAGE)) {
+				} else if (setName.endsWith(IGlobalConstants.MESSAGE)) {
 					Message message = def.createMessage();
 					message.setQName(new QName(namespace, setName));
 
@@ -257,7 +257,7 @@ public class ContextTranslator {
 						if (ps.createPredicate(axiom.getPredicateString())) {
 							// Part with element tag
 							if (ps.getInput().equals(setName)
-									&& ps.getOutput().endsWith(EBConstant.TYPE)) {
+									&& ps.getOutput().endsWith(IGlobalConstants.TYPE)) {
 
 								Part part = def.createPart();
 								part.setName(ps.getOperation());
@@ -270,11 +270,11 @@ public class ContextTranslator {
 								String type = "";
 								// Check element if primitive Event-B types
 								boolean premitive = false;
-								for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
+								for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
 									if (output
-											.equals(EBConstant.EVENTB_TYPES[i])) {
+											.equals(IGlobalConstants.EVENTB_TYPES[i])) {
 										premitive = true;
-										type = EBConstant.XSD_TYPES[i];
+										type = IGlobalConstants.XSD_TYPES[i];
 										break;
 									}
 								}
@@ -321,8 +321,8 @@ public class ContextTranslator {
 			for (IAxiom axiom : axioms) {
 				PredicateString ps = new PredicateString();
 				if (ps.createPredicate(axiom.getPredicateString())) {
-					if (ps.getInput().endsWith(EBConstant.MESSAGE)
-							&& ps.getOutput().endsWith(EBConstant.MESSAGE)) {
+					if (ps.getInput().endsWith(IGlobalConstants.MESSAGE)
+							&& ps.getOutput().endsWith(IGlobalConstants.MESSAGE)) {
 
 						Operation operation = def.createOperation();
 						operation.setName(ps.getOperation());
@@ -374,7 +374,7 @@ public class ContextTranslator {
 			for (ICarrierSet set : sets) {
 				String setName = set.getIdentifierString();
 
-				if (setName.endsWith(EBConstant.TYPE)) {
+				if (setName.endsWith(IGlobalConstants.TYPE)) {
 					Element element = doc.createElementNS(
 							XMLConstants.W3C_XML_SCHEMA_NS_URI, ELEMENT);
 					element.setAttribute(NAME, setName);
@@ -392,10 +392,10 @@ public class ContextTranslator {
 								elementCount++;
 								// Testing xsd types
 								String type = "";
-								for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
-									if (EBConstant.EVENTB_TYPES[i].equals(ps
+								for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
+									if (IGlobalConstants.EVENTB_TYPES[i].equals(ps
 											.getOutput())) {
-										type = EBConstant.XSD_TYPES[i];
+										type = IGlobalConstants.XSD_TYPES[i];
 										break;
 									}
 								}

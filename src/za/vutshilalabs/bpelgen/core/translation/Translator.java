@@ -11,7 +11,7 @@ import org.rodinp.core.IRodinProject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 import za.vutshilalabs.bpelgen.core.RodinHelper;
 import za.vutshilalabs.bpelgen.core.XMLtool;
 
@@ -57,7 +57,7 @@ public class Translator {
 		XMLtool xml = new XMLtool(false, bcmFile);
 		Document doc = xml.getDocument();
 		Element root = doc.getDocumentElement();
-		String accurate = root.getAttribute(EBConstant.EVENTB_ACCURATE);
+		String accurate = root.getAttribute(IGlobalConstants.EVENTB_ACCURATE);
 
 		boolean isAccurate = accurate.equals("true") ? true : false;
 
@@ -70,9 +70,9 @@ public class Translator {
 			machineTrans.createFile(bpelFile);
 
 			Element seesContext = (Element) root.getElementsByTagName(
-					EBConstant.EVENTB_SEES_CONTEXT).item(0);
+					IGlobalConstants.EVENTB_SEES_CONTEXT).item(0);
 			String targetSrc = seesContext
-					.getAttribute(EBConstant.EVENTB_TARGET);
+					.getAttribute(IGlobalConstants.EVENTB_TARGET);
 			// Get the context file
 			String target = targetSrc.substring(targetSrc.lastIndexOf("/") + 1,
 					targetSrc.length() - 4);

@@ -13,17 +13,16 @@ import org.osgi.framework.BundleContext;
  */
 public class Activator extends AbstractUIPlugin {
 
-	// The plug-in ID
-	public static final String PLUGIN_ID = "za.vutshilalabs.bpelgen"; //$NON-NLS-1$
-
 	// The shared instance
 	private static Activator plugin;
 
+	// The plug-in ID
+	public static final String PLUGIN_ID = "za.vutshilalabs.bpelgen"; //$NON-NLS-1$
+
 	public static void errorDialog(final Exception exception, String message) {
 		Shell shell = getShell();
-		message = message + " " + exception.getLocalizedMessage();
 		IStatus status = new Status(IStatus.ERROR, getId(), IStatus.OK,
-				message, exception);
+				exception.getMessage(), exception);
 		ErrorDialog.openError(shell, "BPEL Generator Error", message, status);
 
 	}

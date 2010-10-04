@@ -34,11 +34,11 @@ public class HashTable<T> {
 		return n;
 	}
 
-	private int tableSize = 10;
+	private int currentSize;
 
 	private List<T>[] table;
 
-	private int currentSize;
+	private int tableSize = 10;
 
 	public HashTable() {
 		this(DEFAULT_TABLE_SIZE);

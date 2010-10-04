@@ -36,10 +36,10 @@ import za.vutshilalabs.bpelgen.core.XMLtool;
  */
 public class BPELwriter {
 
-	private IMachineRoot machine;
 	private Document document;
-	private Element process;
+	private IMachineRoot machine;
 	private Element partnerLinks;
+	private Element process;
 	private final String STUB = "STUB";
 
 	/**

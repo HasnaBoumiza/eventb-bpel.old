@@ -254,7 +254,7 @@ public class RodinHelper {
 				invariant = machineRoot.createChild(IInvariant.ELEMENT_TYPE,
 						null, null);
 				String predicate = variableName.concat(" ")
-						.concat(EBConstant.MATH_ELEMENT).concat(" ")
+						.concat(IGlobalConstants.MATH_ELEMENT).concat(" ")
 						.concat(variableType);
 				invariant.setPredicateString(predicate, null);
 				invariant.setLabel("inv" + (count + 1), null);

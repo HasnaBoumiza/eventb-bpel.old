@@ -22,11 +22,11 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 import za.vutshilalabs.bpelgen.core.XMLtool;
 
 /**
- * creates a Bpel document from Event-B machine
+ * Creates a Bpel document from Event-B machine
  * 
  * @author Kabelo Ramongane <djemba@tuks.co.za>
  * @author Lovewell Ramuthivheli <lovewell@tuks.co.za>
@@ -37,6 +37,7 @@ public class MachineTranslator {
 	private IMachineRoot machine;
 	private Document document;
 	private final int INDEX = 1;
+	private final String AND_OP = "&&";
 	Element process;
 	IEvent[] events;
 
@@ -71,6 +72,213 @@ public class MachineTranslator {
 		} catch (Exception e) {
 		}
 
+	}
+
+	/**
+	 * creates the BPEL elements corresponding to their Event-B equivalents
+	 * 
+	 * @param servName
+	 *            ; the name of the machine
+	 * @return the success of the creation
+	 */
+	private boolean createElements(final String servName) {
+		try {
+			events = machine.getEvents();
+
+			Comment generated = document.createComment(IGlobalConstants.GENERATED);
+			document.appendChild(generated);
+			createProcess(servName);
+			createVariables();
+			// createSimpleActivity();
+			createSequenceOfSimpleActivities();
+			createIf();
+			createAssign();
+
+			return true;
+		} catch (Exception e) {
+			System.err.printf("failed getting Events, exception: %s\n",
+					e.getMessage());
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+
+	public void createFile(IFile file) {
+		TransformerFactory factory;
+		Source source;
+		Transformer transformer;
+		Result result;
+		try {
+			factory = TransformerFactory.newInstance();
+			transformer = factory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			source = new DOMSource(document);
+			result = new StreamResult(file.getLocation().toFile());
+			// result = new StreamResult(System.out);
+			transformer.transform(source, result);
+			file.refreshLocal(0, null);
+
+		} catch (Exception ex) {
+			System.err.printf("failed creating file, exception: %s",
+					ex.getMessage());
+		}
+
+	}
+
+	/**
+	 * creates the process element giving
+	 * 
+	 * @param processName
+	 *            , the name of the process being created
+	 */
+	private void createProcess(String processName) {
+		process = document.createElement("process");
+		process.setAttribute("name", processName);
+		process.setAttribute("targetNamespace", IGlobalConstants.targetNS);
+		process.setAttribute("xmlns", IGlobalConstants.xmlns);
+		document.appendChild(process);
+	}
+
+	/**
+	 * @throws RodinDBException
+	 * 
+	 */
+	private void createSequenceOfSimpleActivities() throws RodinDBException {
+		ArrayList<IEvent> sequence = sequenceOfEvents(events);
+		Element sequenceElement = document.createElement("sequence");
+		sequenceElement.setAttribute("name", "GIVE_NAME_OF_SEQUENCE");
+
+		for (int i = 0; i < sequence.size(); i++) {
+			createActivity(sequenceElement, sequence.get(i));
+			process.appendChild(sequenceElement);
+		}
+	}
+
+	/**
+	 * 
+	 * @throws RodinDBException
+	 * @throws DOMException
+	 */
+	@SuppressWarnings("unused")
+	private void createSimpleActivity() throws RodinDBException, DOMException {
+
+		for (IEvent event : events) {
+
+			IAction[] actions = event.getActions();
+
+			if (event.getLabel().startsWith("rec_")) {
+				Element recieve = document.createElement("recieve");
+				recieve.setAttribute("name", event.getLabel());
+				recieve.setAttribute("partnerLink", "ADD_PARTNERLINK");
+
+				// getting all the actions
+				for (IAction action : actions) {
+
+					String input = action.getAssignmentString();
+					String tempBraces = "";
+					for (int i = 0; i < input.length(); i++) {
+						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
+							tempBraces = tempBraces + input.charAt(i);
+						}
+
+					}
+
+					if (tempBraces.equals("()")) {
+						String[] funct = input.split(IGlobalConstants.COLON_EQUALS);
+						int indexOfLeftBracket = funct[INDEX].indexOf("(");
+						int indexOfRightBracket = funct[INDEX].indexOf(")");
+						String operation = funct[INDEX].substring(0,
+								indexOfLeftBracket).trim();
+						String variable = funct[INDEX].substring(
+								indexOfLeftBracket + 1, indexOfRightBracket)
+								.trim();
+						System.out.println(operation);
+
+						recieve.setAttribute("variable", variable);
+						recieve.setAttribute("operation", operation);
+					} else
+						;
+
+				}
+
+				process.appendChild(recieve);
+
+			} else if (event.getLabel().startsWith("rep_")) {
+				Element reply = document.createElement("reply");
+				reply.setAttribute("name", event.getLabel());
+				reply.setAttribute("partnerLink", "ADD_PARTNERLINK");
+
+				// getting all the actions
+				for (IAction action : actions) {
+
+					String input = action.getAssignmentString();
+					String tempBraces = "";
+					for (int i = 0; i < input.length(); i++) {
+						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
+							tempBraces = tempBraces + input.charAt(i);
+						}
+
+					}
+
+					if (tempBraces.equals("()")) {
+						String[] funct = input.split(IGlobalConstants.COLON_EQUALS);
+						int indexOfLeftBracket = funct[INDEX].indexOf("(");
+						int indexOfRightBracket = funct[INDEX].indexOf(")");
+						String operation = funct[INDEX].substring(0,
+								indexOfLeftBracket).trim();
+						String variable = funct[INDEX].substring(
+								indexOfLeftBracket + 1, indexOfRightBracket)
+								.trim();
+						System.out.println(operation);
+
+						reply.setAttribute("inputVariable", variable);
+						reply.setAttribute("operation", operation);
+					} else
+						;
+
+				}
+
+				process.appendChild(reply);
+			} else if (event.getLabel().startsWith("inv_")) {
+				Element invoke = document.createElement("invoke");
+				invoke.setAttribute("name", event.getLabel());
+				invoke.setAttribute("partnerLink", "ADD_PARTNERLINK");
+
+				// invoke.setAttribute("inputVariable", event.);
+
+				// getting all the actions
+				for (IAction action : actions) {
+
+					String input = action.getAssignmentString();
+					String tempBraces = "";
+					for (int i = 0; i < input.length(); i++) {
+						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
+							tempBraces = tempBraces + input.charAt(i);
+						}
+					}
+					if (tempBraces.equals("()")) {
+						String[] funct = input.split(IGlobalConstants.COLON_EQUALS);
+						int indexOfLeftBracket = funct[INDEX].indexOf("(");
+						int indexOfRightBracket = funct[INDEX].indexOf(")");
+						String operation = funct[INDEX].substring(0,
+								indexOfLeftBracket).trim();
+						String variable = funct[INDEX].substring(
+								indexOfLeftBracket + 1, indexOfRightBracket)
+								.trim();
+						System.out.println(operation);
+
+						invoke.setAttribute("variable", variable);
+						invoke.setAttribute("operation", operation);
+					} else
+						;
+				}
+				process.appendChild(invoke);
+
+			} else {
+				;
+			}
+		}
 	}
 
 	/**
@@ -127,210 +335,6 @@ public class MachineTranslator {
 	}
 
 	/**
-	 * creates the BPEL elements corresponding to their Event-B equivalents
-	 * 
-	 * @param servName
-	 *            ; the name of the machine
-	 * @return the success of the creation
-	 */
-	private boolean createElements(final String servName) {
-		try {
-			events = machine.getEvents();
-
-			Comment generated = document.createComment(EBConstant.GENERATED);
-			document.appendChild(generated);
-			createProcess(servName);
-			createVariables();
-			createSimpleActivity();
-			createSequenceOfSimpleActivities();
-			createAssign();
-			return true;
-		} catch (Exception e) {
-			System.err.printf("failed getting Events, exception: %s\n",
-					e.getMessage());
-			e.printStackTrace();
-			return false;
-		}
-
-	}
-
-	public void createFile(IFile file) {
-		TransformerFactory factory;
-		Source source;
-		Transformer transformer;
-		Result result;
-		try {
-			factory = TransformerFactory.newInstance();
-			transformer = factory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			source = new DOMSource(document);
-			result = new StreamResult(file.getLocation().toFile());
-			// result = new StreamResult(System.out);
-			transformer.transform(source, result);
-			file.refreshLocal(0, null);
-
-		} catch (Exception ex) {
-			System.err.printf("failed creating file, exception: %s",
-					ex.getMessage());
-		}
-
-	}
-
-	/**
-	 * creates the process element giving
-	 * 
-	 * @param processName
-	 *            , the name of the process being created
-	 */
-	private void createProcess(String processName) {
-		process = document.createElement("process");
-		process.setAttribute("name", processName);
-		process.setAttribute("targetNamespace", EBConstant.targetNS);
-		process.setAttribute("xmlns", EBConstant.xmlns);
-		document.appendChild(process);
-	}
-
-	/**
-	 * @throws RodinDBException
-	 * 
-	 */
-	private void createSequenceOfSimpleActivities() throws RodinDBException {
-		ArrayList<IEvent> sequence = sequenceOfEvents(events);
-		Element sequenceElement = document.createElement("sequence");
-		sequenceElement.setAttribute("name", "GIVE_NAME_OF_SEQUENCE");
-
-		for (int i = 0; i < sequence.size(); i++) {
-			createActivity(sequenceElement, sequence.get(i));
-			process.appendChild(sequenceElement);
-		}
-	}
-
-	/**
-	 * 
-	 * @throws RodinDBException
-	 * @throws DOMException
-	 */
-	private void createSimpleActivity() throws RodinDBException, DOMException {
-
-		for (IEvent event : events) {
-
-			IAction[] actions = event.getActions();
-
-			if (event.getLabel().startsWith("rec_")) {
-				Element recieve = document.createElement("recieve");
-				recieve.setAttribute("name", event.getLabel());
-				recieve.setAttribute("partnerLink", "ADD_PARTNERLINK");
-
-				// getting all the actions
-				for (IAction action : actions) {
-
-					String input = action.getAssignmentString();
-					String tempBraces = "";
-					for (int i = 0; i < input.length(); i++) {
-						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
-							tempBraces = tempBraces + input.charAt(i);
-						}
-
-					}
-
-					if (tempBraces.equals("()")) {
-						String[] funct = input.split(EBConstant.COLON_EQUALS);
-						int indexOfLeftBracket = funct[INDEX].indexOf("(");
-						int indexOfRightBracket = funct[INDEX].indexOf(")");
-						String operation = funct[INDEX].substring(0,
-								indexOfLeftBracket).trim();
-						String variable = funct[INDEX].substring(
-								indexOfLeftBracket + 1, indexOfRightBracket)
-								.trim();
-						System.out.println(operation);
-
-						recieve.setAttribute("variable", variable);
-						recieve.setAttribute("operation", operation);
-					} else
-						;
-
-				}
-
-				process.appendChild(recieve);
-
-			} else if (event.getLabel().startsWith("rep_")) {
-				Element reply = document.createElement("reply");
-				reply.setAttribute("name", event.getLabel());
-				reply.setAttribute("partnerLink", "ADD_PARTNERLINK");
-
-				// getting all the actions
-				for (IAction action : actions) {
-
-					String input = action.getAssignmentString();
-					String tempBraces = "";
-					for (int i = 0; i < input.length(); i++) {
-						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
-							tempBraces = tempBraces + input.charAt(i);
-						}
-
-					}
-
-					if (tempBraces.equals("()")) {
-						String[] funct = input.split(EBConstant.COLON_EQUALS);
-						int indexOfLeftBracket = funct[INDEX].indexOf("(");
-						int indexOfRightBracket = funct[INDEX].indexOf(")");
-						String operation = funct[INDEX].substring(0,
-								indexOfLeftBracket).trim();
-						String variable = funct[INDEX].substring(
-								indexOfLeftBracket + 1, indexOfRightBracket)
-								.trim();
-						System.out.println(operation);
-
-						reply.setAttribute("inputVariable", variable);
-						reply.setAttribute("operation", operation);
-					} else
-						;
-
-				}
-
-				process.appendChild(reply);
-			} else if (event.getLabel().startsWith("inv_")) {
-				Element invoke = document.createElement("invoke");
-				invoke.setAttribute("name", event.getLabel());
-				invoke.setAttribute("partnerLink", "ADD_PARTNERLINK");
-
-				// invoke.setAttribute("inputVariable", event.);
-
-				// getting all the actions
-				for (IAction action : actions) {
-
-					String input = action.getAssignmentString();
-					String tempBraces = "";
-					for (int i = 0; i < input.length(); i++) {
-						if (input.charAt(i) == '(' || input.charAt(i) == ')') {
-							tempBraces = tempBraces + input.charAt(i);
-						}
-					}
-					if (tempBraces.equals("()")) {
-						String[] funct = input.split(EBConstant.COLON_EQUALS);
-						int indexOfLeftBracket = funct[INDEX].indexOf("(");
-						int indexOfRightBracket = funct[INDEX].indexOf(")");
-						String operation = funct[INDEX].substring(0,
-								indexOfLeftBracket).trim();
-						String variable = funct[INDEX].substring(
-								indexOfLeftBracket + 1, indexOfRightBracket)
-								.trim();
-						System.out.println(operation);
-
-						invoke.setAttribute("variable", variable);
-						invoke.setAttribute("operation", operation);
-					} else
-						;
-				}
-				process.appendChild(invoke);
-
-			} else {
-				; // TODO handle other event naming convensions
-			}
-		}
-	}
-
-	/**
 	 * 
 	 * @throws RodinDBException
 	 */
@@ -343,19 +347,19 @@ public class MachineTranslator {
 		for (IInvariant invariant : invariants) {
 
 			String predicate = invariant.getPredicateString();
-			int position = predicate.indexOf(EBConstant.MATH_ELEMENT);
+			int position = predicate.indexOf(IGlobalConstants.MATH_ELEMENT);
 			String second = predicate.substring(position + 1).trim();
 			String first = predicate.substring(0, position).trim();
 
 			variable = document.createElement("variable");
 			variable.setAttribute("name", first);
-			if (second.endsWith(EBConstant.MESSAGE)) {
+			if (second.endsWith(IGlobalConstants.MESSAGE)) {
 				variable.setAttribute("messageType", second);
 			} else {
 				String type = second;
-				for (int i = 0; i < EBConstant.EVENTB_TYPES.length; i++) {
-					if (EBConstant.EVENTB_TYPES[i].equals(second)) {
-						type = EBConstant.XSD_TYPES[i];
+				for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
+					if (IGlobalConstants.EVENTB_TYPES[i].equals(second)) {
+						type = IGlobalConstants.XSD_TYPES[i];
 						break;
 					}
 				}
@@ -365,6 +369,78 @@ public class MachineTranslator {
 		}
 		process.appendChild(variables);
 
+	}
+
+	private void createIf() throws RodinDBException, DOMException {
+
+		for (IEvent event : events) {
+			int counter = 0;
+			String stGuard = "";
+			IGuard[] guards = event.getGuards();
+			Element ifElement = document.createElement("if");
+			Element condition = document.createElement("condition");
+
+			if (guards.length == 0) {
+				createActivity(process, event);
+			} else {
+
+				System.out.println("noooooooooooooo");
+			}
+
+			for (IGuard guard : guards) {
+				if (counter == 0) {
+					stGuard = guard.getPredicateString();
+					for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
+						for (int j = 0; j < stGuard.length(); j++) {
+							String tempcomp = stGuard.charAt(j) + "";
+							if (tempcomp.equals(IGlobalConstants.EVENTB_TYPES[i])) {
+
+							} else
+								;
+						}
+					}
+
+					counter++;
+				} else if (counter > 0) {
+					stGuard = stGuard + AND_OP + guard.getPredicateString();
+
+					counter++;
+				}
+				condition.setTextContent(stGuard);
+				ifElement.setAttribute("name", "if_" + event.getLabel());
+				ifElement.appendChild(condition);
+				process.appendChild(ifElement);
+
+			}
+
+			if (event.getLabel().startsWith("rec_")) {
+
+				Element recieve = document.createElement("recieve");
+				recieve.setAttribute("name", event.getLabel());
+				recieve.setAttribute("createInstance", "ADD");
+				recieve.setAttribute("partnerLink", "ADD");
+				recieve.setAttribute("operation", "ADD");
+				ifElement.appendChild(recieve);
+			} else if (event.getLabel().startsWith("rep_")) {
+				Element reply = document.createElement("reply");
+				reply.setAttribute("name", event.getLabel());
+				reply.setAttribute("createInstance", "ADD");
+				reply.setAttribute("partnerLink", "ADD");
+				reply.setAttribute("operation", "ADD");
+				ifElement.appendChild(reply);
+			} else if (event.getLabel().startsWith("inv_")) {
+				Element invoke = document.createElement("invoke");
+				invoke.setAttribute("name", event.getLabel());
+				invoke.setAttribute("createInstance", "ADD");
+				invoke.setAttribute("partnerLink", "ADD");
+				invoke.setAttribute("operation", "ADD");
+				ifElement.appendChild(invoke);
+
+			} else {
+				;
+			}
+
+		}
 	}
 
 	/**

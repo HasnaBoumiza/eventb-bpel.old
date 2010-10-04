@@ -1,6 +1,6 @@
 package za.vutshilalabs.bpelgen.core.translation;
 
-import za.vutshilalabs.bpelgen.core.EBConstant;
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
 
 /**
  * 
@@ -11,15 +11,15 @@ import za.vutshilalabs.bpelgen.core.EBConstant;
 
 public class PredicateString {
 
-	private String operation;
 	private String input;
+	private String operation;
 	private String output;
 
 	public boolean createPredicate(String predicate) {
-		if ((predicate.contains(EBConstant.MATH_ELEMENT))
-				&& (predicate.contains(EBConstant.MATH_ARROW))) {
-			int epos = predicate.indexOf(EBConstant.MATH_ELEMENT);
-			int arrowpos = predicate.indexOf(EBConstant.MATH_ARROW);
+		if ((predicate.contains(IGlobalConstants.MATH_ELEMENT))
+				&& (predicate.contains(IGlobalConstants.MATH_ARROW))) {
+			int epos = predicate.indexOf(IGlobalConstants.MATH_ELEMENT);
+			int arrowpos = predicate.indexOf(IGlobalConstants.MATH_ARROW);
 
 			if (epos < arrowpos) {
 				String left = predicate.substring(0, epos);
@@ -74,9 +74,9 @@ public class PredicateString {
 	 * @return
 	 */
 	public String getPredicateString() {
-		String pred1 = operation.concat(" ").concat(EBConstant.MATH_ELEMENT)
+		String pred1 = operation.concat(" ").concat(IGlobalConstants.MATH_ELEMENT)
 				.concat(" ");
-		String pred2 = input.concat(" ").concat(EBConstant.MATH_ARROW)
+		String pred2 = input.concat(" ").concat(IGlobalConstants.MATH_ARROW)
 				.concat(" ").concat(output);
 		return pred1.concat(pred2);
 	}
