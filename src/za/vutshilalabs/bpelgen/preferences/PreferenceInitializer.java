@@ -17,8 +17,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.TNS_WS, "http://www.example.org");
 		store.setDefault(PreferenceConstants.WSDL_NS_PREFIX, "tns");
-		store.setDefault(PreferenceConstants.GENERATE_BINDING, false);
-		store.setDefault(PreferenceConstants.GENERATE_SERVICE, false);
 		store.setDefault(PreferenceConstants.OPTIONS, "generate");
 
 	}

@@ -1,12 +1,10 @@
 package za.vutshilalabs.bpelgen.popup.actions;
 
-import javax.wsdl.Definition;
-import javax.wsdl.WSDLException;
-import javax.wsdl.factory.WSDLFactory;
-import javax.wsdl.xml.WSDLReader;
+import java.io.IOException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -14,6 +12,7 @@ import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.jdom.JDOMException;
 import org.rodinp.core.IRodinProject;
 import org.rodinp.core.RodinDBException;
 
@@ -45,36 +44,33 @@ public class UpdateAction implements IObjectActionDelegate {
 						.getRodinProject(project);
 
 				if (file.getFileExtension().equals("wsdl")) {
-//
-//					try {
-//						WSDLFactory factory = WSDLFactory.newInstance();
-//						WSDLReader reader = factory.newWSDLReader();
-//						reader.setFeature("javax.wsdl.verbose", true);
-//						reader.setFeature("javax.wsdl.importDocuments", true);
-//
-//						Definition def = reader.readWSDL(null, file
-//								.getLocation().toString());
-//
-//					} catch (WSDLException e) {
-//						System.err.printf(
-//								"failed loading wsdl file, exception %s\n",
-//								e.getMessage());
-//					}
 
-					 WSDLTranslator wsdlTranslator = new WSDLTranslator();
-					 try {
-					 wsdlTranslator.init(file, rodinProject);
-					 } catch (RodinDBException e) {
-					 e.printStackTrace();
-					 }
+					WSDLTranslator wsdlTranslator = new WSDLTranslator();
+					try {
+						wsdlTranslator.init(file, rodinProject);
+					} catch (RodinDBException e) {
+						e.printStackTrace();
+					} catch (JDOMException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 
 				else if (file.getFileExtension().equals("bpel")) {
 					BPELTranslator bpelTranslator = new BPELTranslator();
 					try {
 						bpelTranslator.init(file, rodinProject);
-					} catch (RodinDBException e) {
-						System.err.printf("failed creating Machine file, exception: %s\n", e.getMessage());
+					} catch (JDOMException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (CoreException e) {
+						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}

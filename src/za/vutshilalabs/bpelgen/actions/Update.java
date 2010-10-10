@@ -1,12 +1,16 @@
 package za.vutshilalabs.bpelgen.actions;
 
+import java.io.IOException;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+import org.jdom.JDOMException;
 import org.rodinp.core.IRodinProject;
 import org.rodinp.core.RodinDBException;
 
@@ -55,6 +59,10 @@ public class Update implements IWorkbenchWindowActionDelegate {
 						wsdlTranslator.init(file, rodinProject);
 					} catch (RodinDBException e) {
 						e.printStackTrace();
+					} catch (JDOMException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				}
 
@@ -63,7 +71,11 @@ public class Update implements IWorkbenchWindowActionDelegate {
 					BPELTranslator bpelTranslator = new BPELTranslator();
 					try {
 						bpelTranslator.init(file, rodinProject);
-					} catch (RodinDBException e) {
+					} catch (JDOMException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (CoreException e) {
 						e.printStackTrace();
 					}
 				}

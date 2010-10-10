@@ -15,9 +15,12 @@ import org.eventb.core.IConfigurationElement;
 import org.eventb.core.IConstant;
 import org.eventb.core.IContextRoot;
 import org.eventb.core.IConvergenceElement;
+import org.eventb.core.IConvergenceElement.Convergence;
 import org.eventb.core.IEvent;
+import org.eventb.core.IGuard;
 import org.eventb.core.IInvariant;
 import org.eventb.core.IMachineRoot;
+import org.eventb.core.IParameter;
 import org.eventb.core.ISeesContext;
 import org.eventb.core.IVariable;
 import org.rodinp.core.IInternalElement;
@@ -35,14 +38,29 @@ import za.vutshilalabs.bpelgen.core.translation.PredicateString;
  */
 public class RodinHelper {
 
+	private static final Object ID = "id";
+
 	/**
-	 * Create IAction
+	 * check for unAllowed names
 	 * 
+	 * @param id
+	 * @return
+	 */
+	private static String clean(String id) {
+		if (id.equals(ID)) {
+			return id.toUpperCase();
+		}
+		return id;
+	}
+
+	/**
 	 * @param event
 	 * @param assignment
+	 * @param comment
 	 * @throws RodinDBException
 	 */
-	public static void createAction(final IEvent event, final String assignment)
+	public static void createAction(final IEvent event,
+			final String assignment, final String comment)
 			throws RodinDBException {
 		IAction actions[] = event.getActions();
 		int len = actions.length;
@@ -56,10 +74,11 @@ public class RodinHelper {
 		}
 
 		if (!hasAction) {
-			IAction action = event.getRoot().createChild(IAction.ELEMENT_TYPE,
-					null, null);
-			action.setAssignmentString(assignment, null);
+			IAction action = event
+					.createChild(IAction.ELEMENT_TYPE, null, null);
 			action.setLabel("act" + (len + 1), null);
+			action.setComment(comment, null);
+			action.setAssignmentString(assignment, null);
 		}
 
 	}
@@ -79,7 +98,8 @@ public class RodinHelper {
 
 		if (contextRoot instanceof IContextRoot) {
 			PredicateString ps = new PredicateString();
-			ps.createPredicateString(firstTerm, middleTerm, lastTerm);
+			ps.createPredicateString(clean(firstTerm), clean(middleTerm),
+					clean(lastTerm));
 			String predicate = ps.getPredicateString();
 
 			IContextRoot croot = (IContextRoot) contextRoot;
@@ -115,14 +135,14 @@ public class RodinHelper {
 			ICarrierSet[] sets = croot.getCarrierSets();
 
 			for (ICarrierSet set : sets) {
-				if (set.getIdentifierString().equals(name)) {
+				if (set.getIdentifierString().equals(clean(name))) {
 					return;
 				}
 			}
 
 			ICarrierSet carrierSet = contextRoot.createChild(
 					ICarrierSet.ELEMENT_TYPE, null, null);
-			carrierSet.setIdentifierString(name, null);
+			carrierSet.setIdentifierString(clean(name), null);
 		}
 	}
 
@@ -132,22 +152,24 @@ public class RodinHelper {
 	 * @param name
 	 * @throws RodinDBException
 	 */
-	public static void createConstant(final IInternalElement contextRoot,
+	public static boolean createConstant(final IInternalElement contextRoot,
 			final String name) throws RodinDBException {
 		if (contextRoot instanceof IContextRoot) {
 			IContextRoot croot = (IContextRoot) contextRoot;
 			IConstant constants[] = croot.getConstants();
 
 			for (IConstant cons : constants) {
-				if (cons.getIdentifierString().equals(name)) {
-					return;
+				if (cons.getIdentifierString().equals(clean(name))) {
+					return false;
 				}
 			}
 
 			IConstant constant = contextRoot.createChild(
 					IConstant.ELEMENT_TYPE, null, null);
-			constant.setIdentifierString(name, null);
+			constant.setIdentifierString(clean(name), null);
+			return true;
 		}
+		return false;
 	}
 
 	/**
@@ -164,7 +186,7 @@ public class RodinHelper {
 		IEvent events[] = ((IMachineRoot) machine).getEvents();
 		boolean hasEvent = false;
 		for (IEvent event : events) {
-			if (event.getLabel().equals(label)) {
+			if (event.getLabel().equals(clean(label))) {
 				hasEvent = true;
 				break;
 			}
@@ -172,7 +194,7 @@ public class RodinHelper {
 
 		if (!hasEvent) {
 			IEvent event = machine.createChild(IEvent.ELEMENT_TYPE, null, null);
-			event.setLabel(label, null);
+			event.setLabel(clean(label), null);
 			event.setExtended(false, null);
 			event.setConvergence(IConvergenceElement.Convergence.valueOf(0),
 					null);
@@ -180,6 +202,69 @@ public class RodinHelper {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Create non-Ordinary event
+	 * 
+	 * @param machineRoot
+	 * @param label
+	 * @param convergance
+	 * @return
+	 * @throws RodinDBException
+	 */
+	public static IEvent createEvent(final IInternalElement machine,
+			final String label, Convergence convergance)
+			throws RodinDBException {
+
+		IEvent events[] = ((IMachineRoot) machine).getEvents();
+		boolean hasEvent = false;
+		for (IEvent event : events) {
+			if (event.getLabel().equals(clean(label))) {
+				hasEvent = true;
+				break;
+			}
+		}
+
+		if (!hasEvent) {
+			IEvent event = machine.createChild(IEvent.ELEMENT_TYPE, null, null);
+			event.setLabel(clean(label), null);
+			event.setExtended(false, null);
+			event.setConvergence(convergance, null);
+			return event;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Create Event parameter
+	 * 
+	 * @param event
+	 * @param name
+	 * @param comment
+	 * @throws RodinDBException
+	 */
+	public static void createParameter(final IEvent event, final String name,
+			final String comment) throws RodinDBException {
+		IParameter params[] = event.getParameters();
+		boolean exist = false;
+		for (IParameter param : params) {
+			if (param.getIdentifierString().equals(name)) {
+				exist = false;
+				break;
+			}
+		}
+
+		if (!exist) {
+			IParameter param = event.createChild(IParameter.ELEMENT_TYPE, null,
+					null);
+			param.setIdentifierString(name, null);
+
+			if (comment != null) {
+				param.setComment(comment, null);
+			}
+		}
 	}
 
 	public static IRodinFile createRodinConstruct(final String filename,
@@ -240,7 +325,8 @@ public class RodinHelper {
 			boolean hasVariable = false;
 
 			for (int i = 0; i < variables.length; i++) {
-				if (variables[i].getIdentifierString().equals(variableName)) {
+				if (variables[i].getIdentifierString().equals(
+						clean(variableName))) {
 					hasVariable = true;
 					break;
 				}
@@ -249,7 +335,7 @@ public class RodinHelper {
 			if (!hasVariable) {
 				variable = machineRoot.createChild(IVariable.ELEMENT_TYPE,
 						null, null);
-				variable.setIdentifierString(variableName, null);
+				variable.setIdentifierString(clean(variableName), null);
 
 				invariant = machineRoot.createChild(IInvariant.ELEMENT_TYPE,
 						null, null);
@@ -282,6 +368,26 @@ public class RodinHelper {
 			ISeesContext seesContext = machineRoot.createChild(
 					ISeesContext.ELEMENT_TYPE, null, null);
 			seesContext.setSeenContextName(contextName, null);
+		}
+	}
+
+	public static void createGuard(IEvent event, final String predicate)
+			throws RodinDBException {
+		IGuard guards[] = event.getGuards();
+
+		boolean exist = false;
+
+		for (IGuard g : guards) {
+			if (g.getPredicateString().equals(predicate)) {
+				exist = true;
+				break;
+			}
+		}
+
+		if (!exist) {
+			IGuard guard = event.createChild(IGuard.ELEMENT_TYPE, null, null);
+			guard.setLabel("grd" + guards.length, null);
+			guard.setPredicateString(predicate, null);
 		}
 	}
 }

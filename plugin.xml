@@ -110,7 +110,7 @@
          point="org.eclipse.ui.views">
       <view
             class="org.eclipse.ui.navigator.CommonNavigator"
-            icon="icons/sample.gif"
+            icon="icons/bws.png"
             id="za.vutshilalabs.bws.view"
             name="Service Generator">
       </view>
@@ -169,7 +169,7 @@
          <action
                class="za.vutshilalabs.bpelgen.actions.Generate"
                enablesFor="1"
-               icon="icons/sample.gif"
+               icon="icons/bws.png"
                id="za.vutshilalabs.bws.actions.Generate"
                label="&amp;Generate Service"
                menubarPath="za.vutshilalabs.bws.menus/bws"

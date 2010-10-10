@@ -5,6 +5,7 @@ package za.vutshilalabs.bpelgen.core.translation;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
 import org.eventb.core.IContextRoot;
 import org.eventb.core.IMachineRoot;
 import org.rodinp.core.IRodinProject;
@@ -68,6 +69,12 @@ public class Translator {
 			MachineTranslator machineTrans = new MachineTranslator();
 			machineTrans.init(machine);
 			machineTrans.createFile(bpelFile);
+			try {
+				machine.getResource().setPersistentProperty(
+						IGlobalConstants.BPEL, bpelFile.getName());
+			} catch (CoreException e1) {
+				e1.printStackTrace();
+			}
 
 			Element seesContext = (Element) root.getElementsByTagName(
 					IGlobalConstants.EVENTB_SEES_CONTEXT).item(0);
@@ -81,13 +88,16 @@ public class Translator {
 					target);
 			IFile wsdlFile = project.getFile(machine.getElementName().concat(
 					".wsdl"));
-			// OldContextTranslator contextTranslator = new OldContextTranslator();
-			// contextTranslator.init(machine, context);
-			// contextTranslator.createFile(wsdlFile);
 			ContextTranslator wsdlW = new ContextTranslator();
 			try {
 				wsdlW.init(context, machine.getElementName());
 				wsdlW.createFile(wsdlFile, null);
+				context.getResource().setPersistentProperty(
+						IGlobalConstants.WSDL, wsdlFile.getName());
+				wsdlFile.setPersistentProperty(IGlobalConstants.CONTEXT,
+						context.getElementName());
+				bpelFile.setPersistentProperty(IGlobalConstants.CONTEXT,
+						context.getElementName());
 			} catch (Exception e) {
 				System.err.printf("failed creating WSDL file. exception: %s\n",
 						e.getMessage());

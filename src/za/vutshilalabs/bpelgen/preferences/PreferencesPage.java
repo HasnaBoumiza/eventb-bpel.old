@@ -1,10 +1,8 @@
 package za.vutshilalabs.bpelgen.preferences;
 
-import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.RadioGroupFieldEditor;
 import org.eclipse.jface.preference.StringFieldEditor;
-
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
@@ -37,13 +35,6 @@ public class PreferencesPage extends FieldEditorPreferencePage implements
 		addField(prefixWsdl);
 		addField(tns);
 
-		// binding
-		addField(new BooleanFieldEditor(PreferenceConstants.GENERATE_BINDING,
-				"Generate WSDL &binding tag", parent));
-		// service
-
-		addField(new BooleanFieldEditor(PreferenceConstants.GENERATE_SERVICE,
-				"Generate WSDL &service tag", parent));
 		// options
 		addField(new RadioGroupFieldEditor(PreferenceConstants.OPTIONS,
 				"Translation options", 1, new String[][] {
