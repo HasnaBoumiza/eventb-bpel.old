@@ -78,6 +78,7 @@ public class ContextTranslator {
 	private static final String XML_SCHEMA = "schema";
 	private static final String XSD_ANY_TYPE = "xs:anyType";
 	private static final String XSD_TYPE = "type";
+	private static final String COLON = ":";
 
 	private IContextRoot context;
 	private Definition def;
@@ -206,7 +207,8 @@ public class ContextTranslator {
 	 * @throws WSDLException
 	 * @throws CoreException
 	 */
-	public void createFile(IFile wsdl, IProgressMonitor monitor) throws IOException, CoreException, WSDLException {
+	public void createFile(IFile wsdl, IProgressMonitor monitor)
+			throws IOException, CoreException, WSDLException {
 
 		TransformerFactory tFactory;
 		Source source;
@@ -246,9 +248,7 @@ public class ContextTranslator {
 			for (ICarrierSet set : sets) {
 				String setName = set.getIdentifierString();
 
-				if (setName.endsWith(IGlobalConstants.TYPE)) {
-
-				} else if (setName.endsWith(IGlobalConstants.MESSAGE)) {
+				if (setName.endsWith(IGlobalConstants.MESSAGE)) {
 					Message message = def.createMessage();
 					message.setQName(new QName(namespace, setName));
 
@@ -257,7 +257,8 @@ public class ContextTranslator {
 						if (ps.createPredicate(axiom.getPredicateString())) {
 							// Part with element tag
 							if (ps.getInput().equals(setName)
-									&& ps.getOutput().endsWith(IGlobalConstants.TYPE)) {
+									&& ps.getOutput().endsWith(
+											IGlobalConstants.TYPE)) {
 
 								Part part = def.createPart();
 								part.setName(ps.getOperation());
@@ -284,7 +285,7 @@ public class ContextTranslator {
 									part.setName(ps.getOperation());
 									part.setTypeName(new QName(
 											XMLConstants.W3C_XML_SCHEMA_NS_URI,
-											type));
+											removeNamespace(type)));
 									message.addPart(part);
 								}
 
@@ -322,7 +323,8 @@ public class ContextTranslator {
 				PredicateString ps = new PredicateString();
 				if (ps.createPredicate(axiom.getPredicateString())) {
 					if (ps.getInput().endsWith(IGlobalConstants.MESSAGE)
-							&& ps.getOutput().endsWith(IGlobalConstants.MESSAGE)) {
+							&& ps.getOutput()
+									.endsWith(IGlobalConstants.MESSAGE)) {
 
 						Operation operation = def.createOperation();
 						operation.setName(ps.getOperation());
@@ -393,8 +395,8 @@ public class ContextTranslator {
 								// Testing xsd types
 								String type = "";
 								for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
-									if (IGlobalConstants.EVENTB_TYPES[i].equals(ps
-											.getOutput())) {
+									if (IGlobalConstants.EVENTB_TYPES[i]
+											.equals(ps.getOutput())) {
 										type = IGlobalConstants.XSD_TYPES[i];
 										break;
 									}
@@ -449,5 +451,11 @@ public class ContextTranslator {
 		createMessages();
 		createPortType(machineName);
 		createBinding(machineName);
+	}
+	
+	private String removeNamespace(String element) {
+		int pos = element.indexOf(COLON);
+		pos = pos > 0 ? pos + 1 : 0;
+		return element.substring(pos);
 	}
 }

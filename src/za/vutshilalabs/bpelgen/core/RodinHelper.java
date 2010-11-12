@@ -336,6 +336,7 @@ public class RodinHelper {
 				variable = machineRoot.createChild(IVariable.ELEMENT_TYPE,
 						null, null);
 				variable.setIdentifierString(clean(variableName), null);
+				
 
 				invariant = machineRoot.createChild(IInvariant.ELEMENT_TYPE,
 						null, null);
@@ -348,6 +349,7 @@ public class RodinHelper {
 		}
 
 	}
+	
 
 	/**
 	 * Get a Rodin project reference

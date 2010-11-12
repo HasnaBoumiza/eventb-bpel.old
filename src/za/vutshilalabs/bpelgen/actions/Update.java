@@ -1,22 +1,13 @@
 package za.vutshilalabs.bpelgen.actions;
 
-import java.io.IOException;
-
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
-import org.jdom.JDOMException;
-import org.rodinp.core.IRodinProject;
-import org.rodinp.core.RodinDBException;
 
-import za.vutshilalabs.bpelgen.core.RodinHelper;
-import za.vutshilalabs.bpelgen.core.translation.BPELTranslator;
-import za.vutshilalabs.bpelgen.core.translation.WSDLTranslator;
+import za.vutshilalabs.bpelgen.core.translation.Updator;
 
 /**
  * 
@@ -48,41 +39,8 @@ public class Update implements IWorkbenchWindowActionDelegate {
 			if (obj instanceof IFile) {
 
 				IFile file = (IFile) obj;
-				IProject project = file.getProject();
-				IRodinProject rodinProject = RodinHelper
-						.getRodinProject(project);
-
-				if (file.getFileExtension().equals("wsdl")) {
-
-					WSDLTranslator wsdlTranslator = new WSDLTranslator();
-					try {
-						wsdlTranslator.init(file, rodinProject);
-					} catch (RodinDBException e) {
-						e.printStackTrace();
-					} catch (JDOMException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-
-				else if (file.getFileExtension().equals("bpel")) {
-
-					BPELTranslator bpelTranslator = new BPELTranslator();
-					try {
-						bpelTranslator.init(file, rodinProject);
-					} catch (JDOMException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
-					} catch (CoreException e) {
-						e.printStackTrace();
-					}
-				}
-
-			}
-
-		}
+				Updator.update(file);
+		}}
 	}
 
 	@Override

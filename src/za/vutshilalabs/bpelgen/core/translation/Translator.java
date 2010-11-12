@@ -51,12 +51,13 @@ public class Translator {
 	 */
 	public static void translateEventb(IMachineRoot machine) {
 
+		
 		IProject project = machine.getEventBProject().getRodinProject()
 				.getProject();
 		IFile bcmFile = project
 				.getFile(machine.getElementName().concat(".bcm"));
 		XMLtool xml = new XMLtool(false, bcmFile);
-		Document doc = xml.getDocument();
+				Document doc = xml.getDocument();
 		Element root = doc.getDocumentElement();
 		String accurate = root.getAttribute(IGlobalConstants.EVENTB_ACCURATE);
 
@@ -64,8 +65,8 @@ public class Translator {
 
 		if (isAccurate) {
 			// Create BPEL file
-			IFile bpelFile = project.getFile(machine.getElementName().concat(
-					".bpel"));
+			String bpelFilename = FileManager.getBPELName(machine, machine.getRodinProject());
+			IFile bpelFile = project.getFile(bpelFilename);
 			MachineTranslator machineTrans = new MachineTranslator();
 			machineTrans.init(machine);
 			machineTrans.createFile(bpelFile);
@@ -86,8 +87,8 @@ public class Translator {
 			// Get the context file
 			IContextRoot context = machine.getEventBProject().getContextRoot(
 					target);
-			IFile wsdlFile = project.getFile(machine.getElementName().concat(
-					".wsdl"));
+			String wsdlFilename = FileManager.getWSDLName(context, context.getRodinProject());
+			IFile wsdlFile = project.getFile(wsdlFilename);
 			ContextTranslator wsdlW = new ContextTranslator();
 			try {
 				wsdlW.init(context, machine.getElementName());

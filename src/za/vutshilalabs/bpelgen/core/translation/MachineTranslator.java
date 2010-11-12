@@ -2,7 +2,6 @@ package za.vutshilalabs.bpelgen.core.translation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.OutputKeys;
@@ -14,7 +13,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.eclipse.core.resources.IFile;
-import org.eventb.core.IAction;
 import org.eventb.core.IEvent;
 import org.eventb.core.IGuard;
 import org.eventb.core.IInvariant;
@@ -42,6 +40,9 @@ public class MachineTranslator {
 	private IMachineRoot machine;
 	private Document document;
 
+	private static final String REPLY = "REP";
+	private static final String RECEIVE = "REC";
+	private static final String INVOKE = "INV";
 	public void createFile(IFile file) {
 		TransformerFactory factory;
 		Source source;
@@ -115,15 +116,19 @@ public class MachineTranslator {
 			String second = predicate.substring(position + 1).trim();
 			String first = predicate.substring(0, position - 1).trim();
 
-			variable = document.createElement("variable");
-			variable.setAttribute("name", first);
-			if (second.endsWith(IGlobalConstants.MESSAGE)) {
-				variable.setAttribute("messageType", second);
-			} else {
-				String type = getType(second);
-				variable.setAttribute("type", type);
+			if (!first.endsWith("_Variant")) {
+				if (!first.contains("flow")) {
+					variable = document.createElement("variable");
+					variable.setAttribute("name", first);
+					if (second.endsWith(IGlobalConstants.MESSAGE)) {
+						variable.setAttribute("messageType", second);
+					} else {
+						String type = getType(second);
+						variable.setAttribute("type", type);
+					}
+					variables.appendChild(variable);
+				}
 			}
-			variables.appendChild(variable);
 		}
 		process.appendChild(variables);
 
@@ -141,19 +146,20 @@ public class MachineTranslator {
 
 	private void createActivity(Element parent, IEvent event)
 			throws DOMException, RodinDBException {
-		if (event.getLabel().startsWith("rec_")) {
+		System.out.println( "creating activities " + event.getLabel());
+		if (event.getLabel().endsWith(RECEIVE)) {
 			Element recieve = document.createElement("receive");
 			recieve.setAttribute("name", event.getLabel());
 			recieve.setAttribute("partnerLink", STUB);
 			recieve.setAttribute("operation", STUB);
 			parent.appendChild(recieve);
-		} else if (event.getLabel().startsWith("rep_")) {
+		} else if (event.getLabel().endsWith(REPLY)) {
 			Element reply = document.createElement("reply");
 			reply.setAttribute("name", event.getLabel());
 			reply.setAttribute("partnerLink", STUB);
 			reply.setAttribute("operation", STUB);
 			parent.appendChild(reply);
-		} else if (event.getLabel().startsWith("inv_")) {
+		} else if (event.getLabel().endsWith(INVOKE)) {
 			Element invoke = document.createElement("invoke");
 			invoke.setAttribute("name", event.getLabel());
 			invoke.setAttribute("partnerLink", STUB);
@@ -163,45 +169,66 @@ public class MachineTranslator {
 		}
 	}
 
-	private void findSequences() throws RodinDBException {
-		IEvent events[] = machine.getEvents();
-		HashMap<Integer, IEvent> seqs = new HashMap<Integer, IEvent>(0);
+	private void findSequences() throws Exception {
+		String vars[] = getVariants();
+		for (String s: vars) {
+			IEvent events[] = machine.getEvents();
+			HashMap<Integer, IEvent> seqs = new HashMap<Integer, IEvent>(0);
 
+			for (IEvent e : events) {
+				IGuard guards[] = e.getGuards();
+
+				for (IGuard guard : guards) {
+					
+					if (guard.getPredicateString().startsWith(s)){
+						String pd = guard.getPredicateString().trim();
+						int pos = Integer.parseInt(pd.substring(pd.length()-1));
+						seqs.put(pos, e);
+						break;
+					}
+				}
+			}
+			
+			int size = seqs.size();
+			
+			if (size > 0) {
+				
+				Element sequence = document.createElement("sequence");
+				IEvent myEvent = seqs.get(0);
+				sequence.setAttribute("name", myEvent.getLabel());
+				process.appendChild(sequence);
+				
+				for (int i = size-1; i > 0; i--){
+					IEvent e = seqs.get(i);
+					createActivity(sequence, e);
+				}
+			}
+			
+		}
+
+	}
+	
+	
+
+	private String[] getVariants() throws Exception{
+		IEvent events[] = machine.getEvents();
+		ArrayList<String> vars = new ArrayList<String>(0);
+		
 		for (IEvent e : events) {
 			IGuard guards[] = e.getGuards();
 
 			for (IGuard guard : guards) {
-				if (guard.getPredicateString().startsWith("sequenceVariant")){
-					String pd = guard.getPredicateString().trim();
-					int pos = Integer.parseInt(pd.substring(pd.length()-1));
-					seqs.put(pos, e);
-					break;
+				System.out.println( guard.getPredicateString());
+				if (guard.getPredicateString().contains("_Variant")){
+					String var = guard.getPredicateString().split(" ")[0];
+					if (!vars.contains(var)){
+						vars.add(var);
+					}
 				}
 			}
 		}
-		
-		int size = seqs.size();
-		
-		if (size > 0) {
-			Element sequence = document.createElement("sequence");
-			IEvent myEvent = seqs.get(0);
-			sequence.setAttribute("name", myEvent.getLabel());
-			process.appendChild(sequence);
-			
-			for (int i = size-1; i > 0; i--){
-				IEvent e = seqs.get(i);
-				createActivity(sequence, e);
-			}
-		}
-		
-
+		String s[] = new String[vars.size()];
+		return vars.toArray(s);
 	}
 
-	private void findFlows() {
-
-	}
-
-	private void findChoices() {
-
-	}
 }

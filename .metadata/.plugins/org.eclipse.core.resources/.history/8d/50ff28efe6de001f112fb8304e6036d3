@@ -1,0 +1,396 @@
+package za.vutshilalabs.bpelgen.core.translation;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eventb.core.IConvergenceElement;
+import org.eventb.core.IEvent;
+import org.eventb.core.IConvergenceElement.Convergence;
+import org.eventb.core.IVariant;
+
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.Namespace;
+import org.jdom.input.SAXBuilder;
+import org.rodinp.core.IInternalElement;
+import org.rodinp.core.IRodinFile;
+import org.rodinp.core.IRodinProject;
+import org.rodinp.core.RodinDBException;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.eventb.core.IMachineRoot;
+
+import za.vutshilalabs.bpelgen.core.IGlobalConstants;
+import za.vutshilalabs.bpelgen.core.RodinHelper;
+import za.vutshilalabs.bpelgen.core.XMLtool;
+
+public class BPELTranslator {
+
+	private static final String COLON = ":";
+	private static final String ELEMENT = "element";
+	private static final String MSG = "Msg";
+	private static final String MSGTYPE = "messageType";
+	private static final String NAME = "name";
+	private static final Namespace NS = Namespace
+			.getNamespace(IGlobalConstants.NS);
+	private static final String OPERATION = "operation";
+	private static final String SEQUENCE = "sequence";
+	private static final String TYPE = "type";
+	private static final String VARIABLE = "variable";
+	private static final String VARIABLES = "variables";
+	private static final String XSD_PREFIX = "xs:";
+	private static final String GENERATED_SUFFIX = "GN";
+	private static final String  ONE = "1";
+	
+    //contants that will be used as suffixes to the translated elements
+	private static final String  SEQ = "SEQ";
+	private static final String  REPLY = "REP";
+	private static final String  RECEIVE = "REC";
+	private static final String  INVOKE = "INV";
+	private static final String  IF = "IF";
+	private static final String  FLOW = "FLO";
+	private static final String  WHILE = "WHI";
+	
+	private Document document;
+	private IInternalElement machine;
+	private Element process;
+    private Convergence convergence = IConvergenceElement.Convergence.CONVERGENT;
+	/**
+	 * Add a suffix if it does not exist
+	 * 
+	 * @param suffix
+	 * @param text
+	 * @return
+	 */
+	private String addSuffix(String text, String suffix) {
+		text = removeNamespace(text);
+		return text.endsWith(suffix) ? text : text.concat(suffix);
+	}
+
+	//THIS IS AN ASSIGNMENT STATEMENT INSIDE THE ASSIGN EVENT
+	private void createAssign(Element element) {
+		String name = element.getAttributeValue(NAME);
+
+		System.out.println(name);
+	}
+
+	private void createIf(Element element) {
+		String name = element.getAttributeValue(NAME);
+
+		int choice = 1;
+		List list = element.getChildren();
+		
+		//for to increment the decreasing variant
+		for(int i = 0; i < list.size(); i++){
+			Element e = (Element) list.get(i);
+			if (e.getName().equals("else")){
+				choice++;
+			}else if(e.getName().equals("elseif")){
+				choice++;
+			}
+		}
+		
+		//creating the event names 
+		ArrayList<String> temp = new ArrayList<String>(0);
+		String eventName = "if_EVT"; //concatenate as necessary
+		
+		//creating a set of choice
+		String choiceSet = "{ ";
+		for( int i = 0; i < choice; i++){
+			String tempS = eventName;
+			temp.add(tempS.concat("_" + i));
+			if( (choice - i) == 1)
+				choiceSet.concat(" " + i);
+			else
+			choiceSet.concat(" " + i + ",");
+		}
+		choiceSet.concat("}");
+		
+		
+		
+	}
+	
+	private String getType(String type) {
+		String toLook = type.startsWith(XSD_PREFIX) ? type : XSD_PREFIX
+				.concat(type);
+		for (int i = 0; i < IGlobalConstants.EVENTB_TYPES.length; i++) {
+			if (IGlobalConstants.XSD_TYPES[i].equals(toLook)) {
+				return IGlobalConstants.EVENTB_TYPES[i];
+			}
+		}
+
+		return "";
+	}
+
+	/**
+	 * @throws RodinDBException 
+	 * 
+	 */
+	private IEvent createInvoke(Element element) throws RodinDBException {
+		String name = element.getAttributeValue(NAME);
+		name = addSuffix(name, INVOKE);
+		System.out.println(name);
+		return RodinHelper.createEvent(machine, name, convergence);
+		
+	}
+
+	/**
+	 * @throws RodinDBException 
+	 * 
+	 */
+	private IEvent createReceive(Element element) throws RodinDBException {
+		String name = element.getAttributeValue(NAME);
+		name = addSuffix(name, RECEIVE);
+		System.out.println(name);
+		return RodinHelper.createEvent(machine, name, convergence);
+	}
+
+	
+	private IEvent createReply(Element element) throws RodinDBException {
+		String name = element.getAttributeValue(NAME);
+		name = addSuffix(name, REPLY);
+		System.out.println(name);
+		return RodinHelper.createEvent(machine, name, convergence);
+	}
+	
+	/**
+	 * 
+	 * @param bpelFile
+	 */
+	private void createSequence() throws RodinDBException{
+		
+
+		
+		ArrayList<IEvent> arr = new ArrayList<IEvent>(0);
+		ArrayList<Integer> guardValue = new ArrayList<Integer>(0);
+		
+		//info of the decreasing variant
+		int decreasingVariant = 1;
+		String variantType = "xs:int";
+		String variantName = "sequenceVariant";
+		
+		//create a variant for the machine
+		if( machine instanceof IMachineRoot){
+			IVariant variants[] = ((IMachineRoot) machine).getVariants();
+			boolean hasVariant = false;
+			for (IVariant variant : variants) {
+				if (variant.exists()) {
+					hasVariant = true;
+					break;
+				}
+				
+			}
+			
+			if (!hasVariant) {
+				IVariant variant = ((IMachineRoot) machine).createChild(IVariant.ELEMENT_TYPE, null, null);
+				variant.setExpressionString(variantName, null);
+				variant.setComment("the variant for the sequence", null);
+			}
+		}
+		IEvent event = null; //event to add actions on
+		
+		
+		List sequence = process.getChildren(SEQUENCE, NS);
+		for (int i = 0; i < sequence.size(); i++) {
+			Element element = (Element) sequence.get(i);
+			//THE PARENT OF ALL EVENTS. CONVERGES TO IT
+		    event = createSequenceEvent(element); 
+		    arr.add(event);
+			
+			List list = element.getChildren();
+			//decreasingVariant = list.size();
+			
+			for (int k = 0; k < list.size(); k++) {
+				Element e = (Element) list.get(k);
+
+				if (e.getName().equals("receive")) {
+					decreasingVariant++;
+					guardValue.add(decreasingVariant);
+					IEvent evnt = createReceive(e);
+					StringBuffer assignment = new StringBuffer();
+					String ass = assignment.append(variantName + " " + IGlobalConstants.COLON_EQUALS + " " + variantName + " " + IGlobalConstants.MINUS + " " + ONE).toString();
+					RodinHelper.createAction(evnt, ass, "the decreasing variant");
+					arr.add(evnt);
+					
+				}else if(e.getName().equals("invoke")){
+					decreasingVariant++;
+					IEvent evnt = createInvoke(e);
+					StringBuffer assignment = new StringBuffer();
+					String ass = assignment.append(variantName + " " + IGlobalConstants.COLON_EQUALS + " " + variantName + " " + IGlobalConstants.MINUS + " " + ONE).toString();
+					RodinHelper.createAction(evnt, ass, "the decreasing variant");
+					arr.add(evnt);
+					
+				}else if(e.getName().equals("reply")){
+					decreasingVariant++;
+					IEvent evnt = createReply(e);
+					StringBuffer assignment = new StringBuffer();
+					String ass = assignment.append(variantName + " " + IGlobalConstants.COLON_EQUALS + " "+variantName +" "+ IGlobalConstants.MINUS + " " + ONE).toString();
+					RodinHelper.createAction(evnt, ass, "the decreasing variant");
+					arr.add(evnt);
+				}
+			}
+
+		}
+		
+		//creating a set of choices for the decreasing variant
+		StringBuffer set = new StringBuffer("{ ");
+		for( int i = 0; i < decreasingVariant; i++){
+			if( (decreasingVariant - i) == 1)
+				set.append(" " + i);
+			else
+			set.append(" " + i + ",");
+		}
+		set.append("}");
+		
+		variantType = set.toString();
+		RodinHelper.createVariables(machine, variantName, variantType);
+		
+		
+		//initialising the values for the guards to fire the respective events
+		int guardValue = arr.size();
+		for(int i = 0; i < arr.size(); i++){
+			IEvent e = arr.get(i);
+			String predicate = variantName + " " + " = " + " " + guardValue;
+			guardValue--; //decrease the guard value so as to implement a decreasing variant
+			RodinHelper.createGuard(e, predicate);
+			
+		}
+	}
+	
+	private IEvent createSequenceEvent(Element element) throws RodinDBException{
+		String name = element.getAttributeValue(NAME);
+		if(name == null)
+			name = "sequence";
+			
+		name = addSuffix(name, SEQ);
+		return RodinHelper.createEvent(machine, name, convergence);
+	}
+
+	private void createVariables() throws RodinDBException {
+		
+
+		List variablesList = process.getChildren(VARIABLES, NS);
+
+		Element variablesElement = (Element) variablesList.get(0);
+		List variables = variablesElement.getChildren(VARIABLE, NS);
+
+		for (int i = 0; i < variables.size(); i++) {
+			Element variable = (Element) variables.get(i);
+			String vName = "";
+			String vType = "";
+			String type = "";
+			String messageType = "";
+			String elementName = "";
+
+			vName = variable.getAttributeValue(NAME);
+			type = variable.getAttributeValue(TYPE);
+			messageType = variable.getAttributeValue(MSGTYPE);
+			elementName = variable.getAttributeValue(ELEMENT);
+
+			// Element
+			if (elementName != null) {
+				System.out.printf("Var name %s, element %s\n", vName,
+						elementName);
+				vType = elementName;
+			} else if (type != null) {
+				type = getType(removeNamespace(type));
+				if (type.isEmpty()) {
+					type = variable.getAttributeValue(TYPE);
+					type = removeNamespace(type).toUpperCase();
+				}
+				vType = type;
+				System.out.printf("Var name %s, type %s\n", vName, type);
+			} else if (messageType != null) {
+				messageType = removeNamespace(prepareMessage(messageType));
+				System.out.printf("Var name %s, messageType %s\n", vName,
+						messageType);
+				vType = messageType;
+			}
+			
+			vName = vName.replace("Message", "");
+			RodinHelper.createVariables(machine, vName, vType);
+		}
+
+	}
+	
+	private void createFlow(){
+		
+	}
+	
+
+	public void init(final IFile bpelFile, final IRodinProject project)
+			throws JDOMException, IOException, CoreException {
+
+		SAXBuilder builder = new SAXBuilder();
+		document = builder.build(bpelFile.getLocation().toFile());
+		process = (Element) document.getRootElement();
+
+		String machineName = bpelFile.getName()
+		.replace(IGlobalConstants.BPEL_EXTENSION, GENERATED_SUFFIX)
+		.concat(IGlobalConstants.MACHINE_EXTENSION);
+
+		IRodinFile machineFile = RodinHelper.createRodinConstruct(machineName,
+				project);
+		machine = machineFile.getRoot();
+        
+      
+		
+		//CREATING MACHINE CONSTRUCTS
+		//createVariables(bpelFile);
+		createSequence();
+		
+		String context = bpelFile
+		.getPersistentProperty(IGlobalConstants.CONTEXT);
+if (context == null) {
+	context = bpelFile.getName().substring(0,
+			bpelFile.getName().indexOf(IGlobalConstants.PERIOD));
+}
+RodinHelper.linkContext(machine, context);
+		machineFile.save(null, true);
+		project.getResource().refreshLocal(IResource.PROJECT, null);
+	}
+
+	/**
+	 * Prepare message name to support backward translation
+	 * 
+	 * @param messageName
+	 * @return
+	 */
+	private String prepareMessage(String messageName) {
+		if (messageName.endsWith(MSG)) {
+			return messageName.replace(MSG, IGlobalConstants.MESSAGE);
+		} else if (messageName.endsWith(IGlobalConstants.MESSAGE)) {
+			return messageName;
+		} else {
+			return messageName.concat(IGlobalConstants.MESSAGE);
+		}
+	}
+
+	/**
+	 * Remove namespace prefix
+	 * 
+	 * @param element
+	 * @return
+	 */
+	private String removeNamespace(String element) {
+		int pos = element.indexOf(COLON);
+		pos = pos > 0 ? pos + 1 : 0;
+		return element.substring(pos);
+	}
+	
+	private String addPrefix(String original, String prefix){
+		original = removeNamespace(original);
+		if(original.startsWith(prefix))
+			return original;
+		else{
+			StringBuffer  temp = new StringBuffer(prefix);
+			return temp.append(original).toString();
+		}
+	}
+
+}

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -32,7 +33,6 @@ public class WSDLTranslator {
 
 	private static final String COLON = ":";
 	private static final String ELEMENT = "element";
-	private static final String GENERATED_SUFFIX = "GN";
 	private static final String INPUT = "input";
 	private static final String MSG = "Msg";
 	private static final String NAME = "name";
@@ -77,21 +77,20 @@ public class WSDLTranslator {
 	 * 
 	 * @param contextName
 	 * @param project
-	 * @throws RodinDBException
 	 * @throws IOException
 	 * @throws JDOMException
+	 * @throws CoreException 
 	 */
 	public void init(final IFile wsdlFile, final IRodinProject project)
-			throws RodinDBException, JDOMException, IOException {
+			throws JDOMException, IOException, CoreException {
 
 		SAXBuilder builder = new SAXBuilder();
 		document = builder.build(wsdlFile.getLocation().toFile());
 		def = document.getRootElement();
 
-		String contextName = wsdlFile.getName()
-				.replace(IGlobalConstants.WSDL_EXTENSION, GENERATED_SUFFIX)
-				.concat(IGlobalConstants.CONTEXT_EXTENSION);
-
+		String contextName = FileManager.getFilename(wsdlFile, project).concat(
+				IGlobalConstants.CONTEXT_EXTENSION);
+		wsdlFile.setPersistentProperty(IGlobalConstants.CONTEXT,contextName);
 		contextFile = RodinHelper.createRodinConstruct(contextName, project);
 		context = contextFile.getRoot();
 
@@ -237,7 +236,7 @@ public class WSDLTranslator {
 					String bType = getType(inElement.getAttribute(TYPE));
 
 					// for unsupported types, e.g strings
-					if (bType.isEmpty()) {
+					if (bType.isEmpty() || bType.equals("STRING")) {
 						bType = removeNamespace(inElement.getAttribute(TYPE))
 								.toUpperCase();
 						RodinHelper.createCarrierSet(context, bType);

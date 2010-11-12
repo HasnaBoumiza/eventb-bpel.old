@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map>
+	<bundle bundleID="3305" class="za.vutshilalabs.bpelgen.Activator" localization="OSGI-INF/l10n/bundle" name="B Service Generator" project="eventb-bpel" provider="Vutshila Labs"/>
+</map>
